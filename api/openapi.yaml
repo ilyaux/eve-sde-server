@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: EVE SDE Server API
+  description: |
+    Modern REST API for EVE Online Static Data Export.
+
+    Provides access to 25,000+ EVE items with full-text search capabilities.
+    Data is automatically synchronized with CCP's official SDE releases.
+  version: 1.0.0
+  contact:
+    name: EVE SDE Server
+    url: https://github.com/yourusername/eve-sde-server
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.eve-sde.example.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Items
+    description: EVE item operations
+  - name: Search
+    description: Full-text search
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the server
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+
+  /api/v1/items:
+    get:
+      summary: List items
+      description: Returns a paginated list of EVE items
+      tags:
+        - Items
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of items to skip
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+                  meta:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        example: 50
+
+  /api/v1/items/{id}:
+    get:
+      summary: Get item by ID
+      description: Returns a single EVE item by its type ID
+      tags:
+        - Items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The item's type ID
+          schema:
+            type: integer
+            example: 34
+      responses:
+        '200':
+          description: Item found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/search:
+    get:
+      summary: Search items
+      description: Full-text search across item names and descriptions using SQLite FTS5
+      tags:
+        - Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+            example: frigate
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+                  meta:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        example: 42
+        '400':
+          description: Missing query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        type_id:
+          type: integer
+          description: Unique item identifier
+          example: 34
+        name:
+          type: string
+          description: Item name
+          example: Tritanium
+        description:
+          type: string
+          description: Item description
+          example: The main building block in space structures...
+        volume:
+          type: number
+          format: float
+          description: Item volume in m³
+          example: 0.01
+      required:
+        - type_id
+        - name
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Item not found

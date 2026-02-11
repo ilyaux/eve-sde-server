@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE SDE Server - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        thead {
+            background: #f7fafc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .badge-danger {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .badge-warning {
+            background: #feebc8;
+            color: #744210;
+        }
+
+        .key-display {
+            font-family: 'Courier New', monospace;
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .key-display code {
+            color: #2d3748;
+        }
+
+        .copy-btn {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 EVE SDE Server - Admin Dashboard</h1>
+            <p>Manage API keys, monitor usage, and configure server settings</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="total-keys">0</h3>
+                <p>Total API Keys</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="active-keys">0</h3>
+                <p>Active Keys</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-items">25,818</h3>
+                <p>SDE Items</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="server-status">●</h3>
+                <p>Server Status</p>
+            </div>
+        </div>
+
+        <!-- Create New API Key -->
+        <div class="card">
+            <h2>
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Create New API Key
+            </h2>
+
+            <form id="create-key-form">
+                <div class="form-group">
+                    <label for="key-name">Key Name *</label>
+                    <input type="text" id="key-name" placeholder="e.g., My App - Production" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="rate-limit">Rate Limit (requests/minute) *</label>
+                    <input type="number" id="rate-limit" value="60" min="1" max="10000" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="expires-days">Expires In (days, 0 = never)</label>
+                    <input type="number" id="expires-days" value="0" min="0" max="365">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Generate API Key</button>
+            </form>
+
+            <div id="new-key-display" class="hidden" style="margin-top: 20px;">
+                <h3>✅ API Key Created Successfully!</h3>
+                <div class="key-display">
+                    <code id="new-key-value"></code>
+                    <button class="copy-btn" onclick="copyKey()">Copy</button>
+                </div>
+                <p style="color: #e53e3e; margin-top: 10px;">
+                    ⚠️ Save this key now! You won't be able to see it again.
+                </p>
+            </div>
+        </div>
+
+        <!-- API Keys List -->
+        <div class="card">
+            <h2>
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                </svg>
+                Manage API Keys
+            </h2>
+
+            <div id="keys-loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading API keys...</p>
+            </div>
+
+            <table id="keys-table" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Key Preview</th>
+                        <th>Rate Limit</th>
+                        <th>Created</th>
+                        <th>Expires</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="keys-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/stats`);
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('total-keys').textContent = stats.total_keys || 0;
+                    document.getElementById('active-keys').textContent = stats.active_keys || 0;
+                    document.getElementById('server-status').textContent = '●';
+                    document.getElementById('server-status').style.color = '#48bb78';
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                document.getElementById('server-status').textContent = '●';
+                document.getElementById('server-status').style.color = '#f56565';
+            }
+        }
+
+        // Load API keys
+        async function loadKeys() {
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/keys`);
+                const keys = await response.json();
+
+                document.getElementById('keys-loading').classList.add('hidden');
+                document.getElementById('keys-table').classList.remove('hidden');
+
+                const tbody = document.getElementById('keys-tbody');
+                tbody.innerHTML = '';
+
+                keys.forEach(key => {
+                    const row = document.createElement('tr');
+                    const preview = key.key.substring(0, 16) + '...';
+                    const created = new Date(key.created_at).toLocaleDateString();
+                    const expires = key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'Never';
+                    const status = key.active ?
+                        '<span class="badge badge-success">Active</span>' :
+                        '<span class="badge badge-danger">Revoked</span>';
+
+                    row.innerHTML = `
+                        <td><strong>${key.name}</strong></td>
+                        <td><code>${preview}</code></td>
+                        <td>${key.rate_limit}/min</td>
+                        <td>${created}</td>
+                        <td>${expires}</td>
+                        <td>${status}</td>
+                        <td class="actions">
+                            ${key.active ?
+                                `<button class="btn btn-danger btn-sm" onclick="revokeKey(${key.id}, '${key.name}')">Revoke</button>` :
+                                `<button class="btn btn-secondary btn-sm" disabled>Revoked</button>`
+                            }
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                showAlert('Failed to load API keys: ' + error.message, 'error');
+            }
+        }
+
+        // Create new API key
+        document.getElementById('create-key-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('key-name').value;
+            const rateLimit = parseInt(document.getElementById('rate-limit').value);
+            const expiresDays = parseInt(document.getElementById('expires-days').value);
+
+            let expiresAt = null;
+            if (expiresDays > 0) {
+                const date = new Date();
+                date.setDate(date.getDate() + expiresDays);
+                expiresAt = date.toISOString();
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/keys`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, rate_limit: rateLimit, expires_at: expiresAt })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create API key');
+                }
+
+                const result = await response.json();
+
+                document.getElementById('new-key-value').textContent = result.key;
+                document.getElementById('new-key-display').classList.remove('hidden');
+                document.getElementById('create-key-form').reset();
+
+                showAlert('API key created successfully!', 'success');
+                loadKeys();
+                loadStats();
+            } catch (error) {
+                showAlert('Failed to create API key: ' + error.message, 'error');
+            }
+        });
+
+        // Revoke API key
+        async function revokeKey(id, name) {
+            if (!confirm(`Are you sure you want to revoke the key "${name}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/keys/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to revoke key');
+                }
+
+                showAlert('API key revoked successfully', 'success');
+                loadKeys();
+                loadStats();
+            } catch (error) {
+                showAlert('Failed to revoke key: ' + error.message, 'error');
+            }
+        }
+
+        // Copy key to clipboard
+        function copyKey() {
+            const keyValue = document.getElementById('new-key-value').textContent;
+            navigator.clipboard.writeText(keyValue);
+            showAlert('API key copied to clipboard!', 'success');
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Initialize
+        loadStats();
+        loadKeys();
+        setInterval(loadStats, 30000); // Refresh stats every 30s
+    </script>
+</body>
+</html>
