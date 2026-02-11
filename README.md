@@ -10,8 +10,6 @@ Modern REST & GraphQL API for EVE Online Static Data Export (SDE) with auto-upda
 [![EVE Online](https://img.shields.io/badge/EVE-Online-yellow.svg)](https://www.eveonline.com/)
 [![API](https://img.shields.io/badge/API-REST%20%26%20GraphQL-blue.svg)](https://github.com/ilyaux/eve-sde-server)
 
-**Tags:** `eve-online` `eve-api` `sde` `static-data-export` `rest-api` `graphql` `golang` `mmo` `game-api` `sqlite` `docker` `prometheus` `grafana` `ccp-games` `spaceship-mmo` `game-development` `third-party-tools`
-
 ---
 
 ## 🎯 What is This?
