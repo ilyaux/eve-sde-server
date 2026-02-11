@@ -1,16 +1,31 @@
 # EVE SDE Server
 
+> **EVE Online API** | **Static Data Export** | **REST & GraphQL** | **Game Development** | **MMO Database**
+
 Modern REST & GraphQL API for EVE Online Static Data Export (SDE) with auto-updates, full-text search, and production-ready features.
 
 [![Go Version](https://img.shields.io/badge/go-1.22+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com)
+[![EVE Online](https://img.shields.io/badge/EVE-Online-yellow.svg)](https://www.eveonline.com/)
+[![API](https://img.shields.io/badge/API-REST%20%26%20GraphQL-blue.svg)](https://github.com/ilyaux/eve-sde-server)
+
+**Tags:** `eve-online` `eve-api` `sde` `static-data-export` `rest-api` `graphql` `golang` `mmo` `game-api` `sqlite` `docker` `prometheus` `grafana` `ccp-games` `spaceship-mmo` `game-development` `third-party-tools`
 
 ---
 
 ## 🎯 What is This?
 
-A production-ready Go server that provides fast, searchable access to EVE Online's Static Data Export through REST and GraphQL APIs. Replaces outdated MySQL dumps with a modern, auto-updating service.
+**EVE SDE Server** is a production-ready **Go microservice** that provides fast, searchable access to **EVE Online's Static Data Export (SDE)** through modern **REST and GraphQL APIs**.
+
+Built for **EVE Online third-party developers**, this server replaces outdated Fuzzwork MySQL dumps with a **self-hosted, auto-updating solution** that synchronizes with CCP's official SDE daily. Perfect for building market analysis tools, fitting calculators, industry planners, Discord bots, mobile apps, and any EVE Online third-party application requiring item database access.
+
+**Why use this?**
+- ⚡ **10x faster** than parsing YAML files manually
+- 🔄 **Always up-to-date** with automatic SDE synchronization
+- 🚀 **Production-ready** with monitoring, caching, and security
+- 🆓 **Free & Open Source** - host it yourself
+- 📊 **Flexible querying** via REST or GraphQL
 
 **Key Features:**
 - 🚀 **Fast** - SQLite with FTS5 full-text search (<50ms p95 latency)
@@ -415,13 +430,24 @@ eve-sde-server/
 
 ---
 
-## 🎯 Use Cases
+## 🎯 Use Cases & Examples
 
-- **EVE Online Developers** - Build apps with real-time SDE access
-- **Third-Party Tools** - Integrate EVE item data via REST/GraphQL
-- **Market Analysis** - Combine with ESI for market tools
-- **Game Wikis** - Power search and item databases
-- **Discord Bots** - Quick item lookups
+**For EVE Online Developers:**
+- 🤖 **Discord Bots** - Item lookup commands, price checks, fitting links
+- 📱 **Mobile Apps** - iOS/Android EVE companion apps with offline item database
+- 🌐 **Web Tools** - Market analysis, industry calculators, fitting tools
+- 📊 **Data Analytics** - Market trends, industry planning, mining optimization
+- 🎮 **Third-Party Apps** - Ship fittings, skill planners, corporation tools
+
+**Real-World Applications:**
+- EVE Market Trading Platforms
+- Industry & Manufacturing Calculators
+- PvP Fitting Databases
+- Mining Yield Calculators
+- Corporation Asset Management
+- Alliance Doctrine Builders
+- Newbie Helper Bots
+- EVE Wiki & Documentation Sites
 
 ---
 
@@ -461,6 +487,33 @@ Built with:
 - [Prometheus](https://prometheus.io/) - Metrics & monitoring
 
 Data provided by [CCP Games](https://www.ccpgames.com/) via EVE Online SDE.
+
+---
+
+## 🔍 Related Topics & Keywords
+
+<details>
+<summary>SEO Keywords for Discovery</summary>
+
+**EVE Online Development:**
+eve online api, eve online sde, eve online static data export, eve online database, eve online items database, eve online third party tools, eve online developer tools, eve online api wrapper, eve online sdk, eve sde server, eve online data access, eve online item search, eve online market tools
+
+**API & Technology:**
+rest api golang, graphql api go, sqlite fts5, full text search api, game database api, mmo database api, real-time game data, auto-updating api, docker microservice, prometheus monitoring, grafana dashboard, go chi router, golang rest server
+
+**Game Development:**
+game item database, mmo item database, spaceship game api, sci-fi game database, multiplayer game tools, game data synchronization, game api development, third party game tools, game developer api, indie game backend
+
+**Use Cases:**
+eve market analysis, eve trading tools, eve fitting tools, eve wiki api, eve discord bot, eve mobile app, eve third party app, eve online calculator, eve industry tools, eve manufacturing tools, eve mining tools, eve pvp tools
+
+**Technologies:**
+golang microservice, sqlite embedded database, docker compose deployment, kubernetes ready, prometheus metrics, grafana monitoring, graphql playground, rest pagination, api rate limiting, jwt authentication, tls https server, automated data updates
+
+**Alternatives To:**
+fuzzwork mysql dump, eve central api, zkillboard api, eve marketdata, eve online esi alternative, static data alternative, sde yaml parser, eve database hosting
+
+</details>
 
 ---
 
