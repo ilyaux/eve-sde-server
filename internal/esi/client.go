@@ -14,7 +14,7 @@ import (
 
 const (
 	ESIBaseURL = "https://esi.evetech.net/latest"
-	UserAgent  = "EVE-SDE-Server/1.0 (https://github.com/yourusername/eve-sde-server)"
+	UserAgent  = "EVE-SDE-Server/1.0 (https://github.com/ilyaux/eve-sde-server)"
 )
 
 // Client handles ESI API requests
