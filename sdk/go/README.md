@@ -17,7 +17,7 @@ import (
     "fmt"
     "log"
 
-    evesde "github.com/ilya/eve-sde-server/sdk/go"
+    evesde "github.com/ilyaux/eve-sde-server/sdk/go"
 )
 
 func main() {
