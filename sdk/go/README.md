@@ -5,7 +5,7 @@ Official Go client library for the EVE SDE Server API.
 ## Installation
 
 ```bash
-go get github.com/ilya/eve-sde-server/sdk/go
+go get github.com/ilyaux/eve-sde-server/sdk/go
 ```
 
 ## Quick Start
