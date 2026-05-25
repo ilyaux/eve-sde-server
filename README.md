@@ -1,175 +1,133 @@
 # EVE SDE Server
 
-> **EVE Online API** | **Static Data Export** | **REST & GraphQL** | **Game Development** | **MMO Database**
-
-Modern REST & GraphQL API for EVE Online Static Data Export (SDE) with auto-updates, full-text search, and production-ready features.
-
-[![Go Version](https://img.shields.io/badge/go-1.24+-blue.svg)](https://golang.org)
+[![CI](https://github.com/ilyaux/eve-sde-server/actions/workflows/ci.yml/badge.svg)](https://github.com/ilyaux/eve-sde-server/actions/workflows/ci.yml)
+[![Go Version](https://img.shields.io/badge/go-1.24+-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com)
-[![EVE Online](https://img.shields.io/badge/EVE-Online-yellow.svg)](https://www.eveonline.com/)
-[![API](https://img.shields.io/badge/API-REST%20%26%20GraphQL-blue.svg)](https://github.com/ilyaux/eve-sde-server)
 
----
+Self-hosted REST and GraphQL API for the EVE Online Static Data Export (SDE).
+It stores SDE data in SQLite, builds an FTS5 search index, and exposes a small
+API that is easy to run locally, in Docker, or behind your own service.
 
-## 🎯 What is This?
+## What It Does
 
-**EVE SDE Server** is a production-ready **Go microservice** that provides fast, searchable access to **EVE Online's Static Data Export (SDE)** through modern **REST and GraphQL APIs**.
+- Imports CCP's official SDE zip into SQLite.
+- Serves item lookup, list, and full-text search endpoints.
+- Provides a GraphQL endpoint with GraphiQL enabled.
+- Includes API key authentication, admin key management, and rate limiting.
+- Proxies selected ESI endpoints with retry and in-memory caching.
+- Ships with Prometheus metrics and Grafana provisioning.
+- Includes a Go SDK under `sdk/go`.
 
-Built for **EVE Online third-party developers**, this server replaces outdated Fuzzwork MySQL dumps with a **self-hosted, auto-updating solution** that synchronizes with CCP's official SDE daily. Perfect for building market analysis tools, fitting calculators, industry planners, Discord bots, mobile apps, and any EVE Online third-party application requiring item database access.
+## Requirements
 
-**Why use this?**
-- ⚡ **10x faster** than parsing YAML files manually
-- 🔄 **Always up-to-date** with automatic SDE synchronization
-- 🚀 **Production-ready** with monitoring, caching, and security
-- 🆓 **Free & Open Source** - host it yourself
-- 📊 **Flexible querying** via REST or GraphQL
+- Go 1.24 or newer.
+- Docker or Docker Compose if you want containerized deployment.
+- About 400 MB of network download for a full SDE import.
 
-**Key Features:**
-- 🚀 **Fast** - SQLite with FTS5 full-text search (<50ms p95 latency)
-- 🔄 **Auto-updating** - Daily SDE updates from CCP at 03:00 UTC
-- 🔍 **Searchable** - Full-text search across all items
-- 📊 **GraphQL** - Flexible queries with GraphiQL UI
-- 🔒 **Secure** - TLS/HTTPS, API key auth, rate limiting
-- 📦 **Single Binary** - No external dependencies (SQLite embedded)
-- 🐳 **Docker Ready** - Includes Prometheus + Grafana monitoring
-
----
-
-## 🚀 Quick Start
-
-### Using Docker Compose (Recommended)
+## Quick Start With Go
 
 ```bash
-# Clone the repository
-git clone https://github.com/ilyaux/eve-sde-server
+git clone https://github.com/ilyaux/eve-sde-server.git
 cd eve-sde-server
 
-# Start the server with monitoring
-docker-compose up -d
-
-# Server available at http://localhost:8080
-# Grafana dashboard at http://localhost:3000 (admin/admin)
-```
-
-### Using Docker
-
-```bash
-docker run -p 8080:8080 -v sde-data:/app/data eve-sde-server
-```
-
-### Using Go (Development)
-
-```bash
-# Install dependencies
 go mod download
-
-# Create the local SQLite schema with sample data
 make migrate
-
-# Run server
-go run cmd/server/main.go
-
-# Or build binary
-make build
-./bin/eve-sde-server
+go run ./cmd/server
 ```
 
-### Initial SDE Import
+The server starts on `http://localhost:8080`.
 
 ```bash
-# Download and import SDE data (~400MB)
-make import-sde
-
-# Or manually
-curl -L -o data/sde.zip https://eve-static-data-export.s3-eu-west-1.amazonaws.com/tranquility/sde.zip
-unzip data/sde.zip -d data/sde
-go run cmd/import-sde/main.go
-```
-
----
-
-## 📖 API Documentation
-
-### REST API
-
-**Base URL:** `http://localhost:8080/api/v1`
-
-#### Get Item by ID
-```bash
-GET /api/v1/items/{id}
-
-# Example
+curl http://localhost:8080/health
 curl http://localhost:8080/api/v1/items/34
-```
-
-**Response:**
-```json
-{
-  "type_id": 34,
-  "name": "Tritanium",
-  "description": "A very heavy, yet bendable metal...",
-  "volume": 0.01
-}
-```
-
-#### Search Items
-```bash
-GET /api/v1/search?q={query}&limit={limit}&offset={offset}
-
-# Example
 curl "http://localhost:8080/api/v1/search?q=mineral&limit=5"
 ```
 
-**Response:**
+`make migrate` creates the SQLite schema and a small sample dataset. For real
+data, import the full SDE:
+
+```bash
+make import-sde
+```
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+The container initializes the SQLite schema on startup. It does not download the
+full SDE automatically; run `make import-sde` locally or execute
+`./eve-sde-import-sde` inside a container that has the data volume mounted.
+
+Services from `docker-compose.yml`:
+
+- API server: `http://localhost:8080`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000` (`admin/admin`)
+
+## Configuration
+
+Environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `8080` | HTTP port. |
+| `DB_PATH` | `data/sde.db` | SQLite database path. |
+| `TLS_ENABLED` | `false` | Enables HTTPS. |
+| `TLS_CERT_FILE` | empty | TLS certificate path. |
+| `TLS_KEY_FILE` | empty | TLS private key path. |
+| `ALLOWED_ORIGINS` | `*` | Comma-separated CORS origins. |
+| `AUTH_ENABLED` | `false` | Enables API key auth for API routes. |
+| `ADMIN_USERNAME` | `admin` | Basic auth username for `/admin`. |
+| `ADMIN_PASSWORD` | `admin` | Basic auth password for `/admin`. |
+| `SDE_AUTO_UPDATE` | `false` | Enables scheduled SDE update checks. |
+| `SDE_URL` | CCP SDE URL | SDE zip download URL. |
+
+For public deployments, set explicit `ALLOWED_ORIGINS`, enable TLS at the edge,
+and replace the default admin credentials.
+
+## REST API
+
+Base URL: `http://localhost:8080/api/v1`
+
+```bash
+GET /items?limit=50&offset=0
+GET /items/{type_id}
+GET /search?q=tritanium&limit=10&offset=0
+GET /diff?from=20250101&to=20250201
+GET /changelog
+```
+
+List and search responses use this shape:
+
 ```json
 {
   "data": [
     {
       "type_id": 34,
       "name": "Tritanium",
-      "volume": 0.01
+      "description": "A heavy, silver-gray metal...",
+      "volume": 0.01,
+      "group_id": 18,
+      "category_id": 4
     }
   ],
   "meta": {
     "count": 1,
-    "limit": 5,
+    "total": 1,
+    "limit": 10,
     "offset": 0
   }
 }
 ```
 
-#### List Items
-```bash
-GET /api/v1/items?limit={limit}&offset={offset}
+OpenAPI documentation is served at `http://localhost:8080/docs`.
 
-# Example
-curl "http://localhost:8080/api/v1/items?limit=10"
-```
+## GraphQL
 
----
+Endpoint: `http://localhost:8080/api/graphql`
 
-### GraphQL API
-
-**Endpoint:** `http://localhost:8080/api/graphql`
-
-**GraphiQL UI:** Open `http://localhost:8080/api/graphql` in browser for interactive playground
-
-#### Example Queries
-
-**Get single item:**
-```graphql
-query {
-  item(id: 34) {
-    typeId
-    name
-    description
-    volume
-  }
-}
-```
-
-**Search items:**
 ```graphql
 query {
   search(query: "shield booster", limit: 5) {
@@ -180,345 +138,78 @@ query {
 }
 ```
 
-**List with pagination:**
-```graphql
-query {
-  items(limit: 10, offset: 0) {
-    typeId
-    name
-    volume
-  }
-}
-```
+## Authentication
 
----
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure:
+When `AUTH_ENABLED=true`, REST and GraphQL API requests require an API key:
 
 ```bash
-# Server
-PORT=8080
-
-# Database
-DB_PATH=data/sde.db
-
-# TLS/HTTPS
-TLS_ENABLED=false
-TLS_CERT_FILE=/path/to/cert.pem
-TLS_KEY_FILE=/path/to/key.pem
-
-# CORS
-ALLOWED_ORIGINS=*
-
-# Authentication
-AUTH_ENABLED=false
-
-# Auto-update
-SDE_AUTO_UPDATE=true
-SDE_URL=https://eve-static-data-export.s3-eu-west-1.amazonaws.com/tranquility/sde.zip
-```
-
-### Production Settings
-
-For production deployment:
-
-```bash
-# Enable TLS
-TLS_ENABLED=true
-TLS_CERT_FILE=/etc/letsencrypt/live/yourdomain.com/fullchain.pem
-TLS_KEY_FILE=/etc/letsencrypt/live/yourdomain.com/privkey.pem
-
-# Set allowed origins (no wildcards!)
-ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
-
-# Enable authentication
-AUTH_ENABLED=true
-
-# Enable auto-updates
-SDE_AUTO_UPDATE=true
-```
-
----
-
-## 🔑 Authentication
-
-When `AUTH_ENABLED=true`, API requests require an API key:
-
-### Create API Key (Admin Dashboard)
-
-1. Navigate to `http://localhost:8080/admin`
-2. Login with default credentials (admin/admin) - **change in production!**
-3. Create a new API key with custom rate limits
-
-### Use API Key
-
-```bash
-# Include in Authorization header
-curl -H "Authorization: Bearer esk_your_api_key_here" \
+curl -H "Authorization: Bearer esk_your_api_key" \
   http://localhost:8080/api/v1/items/34
 ```
 
-### Admin API Endpoints
-
-Protected with HTTP Basic Auth (admin/admin):
+Admin routes use HTTP Basic Auth:
 
 ```bash
-# Trigger manual SDE update
-POST /api/admin/sde/update
-
-# Get update status
-GET /api/admin/sde/status
-
-# Manage API keys
-GET /api/admin/keys
-POST /api/admin/keys
+GET    /api/admin/stats
+GET    /api/admin/keys
+POST   /api/admin/keys
 DELETE /api/admin/keys/{id}
+POST   /api/admin/sde/update
+GET    /api/admin/sde/status
 ```
 
----
-
-## 📊 Monitoring
-
-Included Prometheus + Grafana stack:
-
-- **Prometheus:** `http://localhost:9090`
-- **Grafana:** `http://localhost:3000` (admin/admin)
-- **Metrics Endpoint:** `http://localhost:8080/metrics`
-
-**Available Metrics:**
-- Request count, duration, response codes
-- Rate limiter stats
-- Database connection pool
-- Cache hit/miss rates
-
----
-
-## 🛠️ Development
-
-### Run Tests
+## Go SDK
 
 ```bash
-# All tests
-make test
-
-# With coverage
-make test-coverage
-
-# Benchmarks
-make bench
+go get github.com/ilyaux/eve-sde-server/sdk/go
 ```
 
-### Database Migrations
+```go
+client := evesde.NewClient("http://localhost:8080", "")
+
+item, err := client.GetItem(34)
+results, err := client.Search("tritanium", 10)
+list, err := client.ListItemsWithMeta(50, 0)
+```
+
+## Development
 
 ```bash
-# Run migrations
+go test ./...
+go vet ./...
+go build -o bin/eve-sde-server ./cmd/server
+```
+
+Useful make targets:
+
+```bash
 make migrate
-
-# Check migration status
-make migrate-status
-
-# Rollback last migration
-make migrate-down
-```
-
-### Code Quality
-
-```bash
-# Format code
-make fmt
-
-# Run linter
-make lint
-
-# Tidy modules
-make mod-tidy
-```
-
----
-
-## 🐳 Docker
-
-### Build Image
-
-```bash
-# Using make
-make docker
-
-# Or manually
-docker build -t eve-sde-server .
-```
-
-### Run Container
-
-```bash
-# Basic run
-docker run -p 8080:8080 -v sde-data:/app/data eve-sde-server
-
-# With environment variables
-docker run -p 8080:8080 \
-  -e AUTH_ENABLED=true \
-  -e SDE_AUTO_UPDATE=true \
-  -v sde-data:/app/data \
-  eve-sde-server
-```
-
-### Docker Compose
-
-```bash
-# Start all services
+make import-sde
+make test
 make docker-compose-up
-
-# Stop all services
 make docker-compose-down
-
-# View logs
-docker-compose logs -f eve-sde-server
 ```
 
----
+The CI workflow runs vet, unit tests, race tests on Linux, SDK checks, server
+build, and Docker image build.
 
-## 📁 Project Structure
+## Project Layout
 
-```
-eve-sde-server/
-├── cmd/
-│   ├── server/          # Main server
-│   ├── import-sde/      # SDE importer
-│   └── migrate/         # Database migrations
-├── internal/
-│   ├── api/
-│   │   ├── handlers/    # HTTP handlers
-│   │   └── middleware/  # Auth, rate limiting, caching
-│   ├── graphql/         # GraphQL schema & resolvers
-│   ├── database/        # Database & migrations
-│   ├── cache/           # In-memory cache (bigcache)
-│   ├── auth/            # API key management
-│   ├── scheduler/       # Auto-update scheduler
-│   ├── esi/             # ESI proxy client
-│   └── config/          # Configuration
-├── web/                 # Admin dashboard HTML
-├── docker-compose.yml   # Docker Compose config
-├── Dockerfile           # Docker build
-├── Makefile             # Build tasks
-└── README.md
+```text
+cmd/                       command binaries
+internal/api/              HTTP handlers and middleware
+internal/auth/             API key management
+internal/cache/            memory and Redis cache implementations
+internal/database/         SQLite setup and migrations
+internal/graphql/          GraphQL schema and resolvers
+internal/sde/              SDE downloader, parser, and importer
+internal/scheduler/        scheduled SDE updates
+sdk/go/                    Go SDK
+api/openapi.yaml           OpenAPI spec
+deployments/               Prometheus and Grafana provisioning
+web/                       Swagger and admin HTML
 ```
 
----
+## License
 
-## ⚡ Performance
-
-- **Latency (p95):** <30ms for item queries
-- **Throughput:** >2000 req/s on modest hardware
-- **Database:** SQLite with WAL mode + connection pooling
-- **Caching:** 60s TTL in-memory cache (1024 shards)
-- **Search:** FTS5 full-text index for instant search
-
----
-
-## 🔒 Security Features
-
-- ✅ **TLS/HTTPS** support with configurable certificates
-- ✅ **API Key Authentication** with per-key rate limits
-- ✅ **Rate Limiting** with token bucket algorithm
-- ✅ **Input Validation** prevents SQL injection & DoS
-- ✅ **CORS** configurable per environment
-- ✅ **Graceful Shutdown** prevents data loss
-- ✅ **SQL Injection Protection** via parameterized queries
-
----
-
-## 🎯 Use Cases & Examples
-
-**For EVE Online Developers:**
-- 🤖 **Discord Bots** - Item lookup commands, price checks, fitting links
-- 📱 **Mobile Apps** - iOS/Android EVE companion apps with offline item database
-- 🌐 **Web Tools** - Market analysis, industry calculators, fitting tools
-- 📊 **Data Analytics** - Market trends, industry planning, mining optimization
-- 🎮 **Third-Party Apps** - Ship fittings, skill planners, corporation tools
-
-**Real-World Applications:**
-- EVE Market Trading Platforms
-- Industry & Manufacturing Calculators
-- PvP Fitting Databases
-- Mining Yield Calculators
-- Corporation Asset Management
-- Alliance Doctrine Builders
-- Newbie Helper Bots
-- EVE Wiki & Documentation Sites
-
----
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) for details
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open a Pull Request
-
----
-
-## 📞 Support
-
-- **Issues:** [GitHub Issues](https://github.com/ilyaux/eve-sde-server/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/ilyaux/eve-sde-server/discussions)
-
----
-
-## 🙏 Credits
-
-Built with:
-- [Go](https://golang.org/) - Programming language
-- [Chi](https://github.com/go-chi/chi) - HTTP router
-- [SQLite](https://sqlite.org/) - Database
-- [GraphQL-Go](https://github.com/graphql-go/graphql) - GraphQL implementation
-- [Zerolog](https://github.com/rs/zerolog) - Structured logging
-- [Prometheus](https://prometheus.io/) - Metrics & monitoring
-
-Data provided by [CCP Games](https://www.ccpgames.com/) via EVE Online SDE.
-
----
-
-## 🔍 Related Topics & Keywords
-
-<details>
-<summary>SEO Keywords for Discovery</summary>
-
-**EVE Online Development:**
-eve online api, eve online sde, eve online static data export, eve online database, eve online items database, eve online third party tools, eve online developer tools, eve online api wrapper, eve online sdk, eve sde server, eve online data access, eve online item search, eve online market tools
-
-**API & Technology:**
-rest api golang, graphql api go, sqlite fts5, full text search api, game database api, mmo database api, real-time game data, auto-updating api, docker microservice, prometheus monitoring, grafana dashboard, go chi router, golang rest server
-
-**Game Development:**
-game item database, mmo item database, spaceship game api, sci-fi game database, multiplayer game tools, game data synchronization, game api development, third party game tools, game developer api, indie game backend
-
-**Use Cases:**
-eve market analysis, eve trading tools, eve fitting tools, eve wiki api, eve discord bot, eve mobile app, eve third party app, eve online calculator, eve industry tools, eve manufacturing tools, eve mining tools, eve pvp tools
-
-**Technologies:**
-golang microservice, sqlite embedded database, docker compose deployment, kubernetes ready, prometheus metrics, grafana monitoring, graphql playground, rest pagination, api rate limiting, jwt authentication, tls https server, automated data updates
-
-**Alternatives To:**
-fuzzwork mysql dump, eve central api, zkillboard api, eve marketdata, eve online esi alternative, static data alternative, sde yaml parser, eve database hosting
-
-</details>
-
----
-
-<div align="center">
-Made with ❤️ for the EVE Online developer community<br>
-Not affiliated with CCP Games
-</div>
+MIT. See [LICENSE](LICENSE).

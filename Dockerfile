@@ -13,11 +13,19 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build binary
+# Build binaries
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w" \
     -o eve-sde-server \
-    cmd/server/main.go
+    ./cmd/server && \
+    CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -o eve-sde-migrate \
+    ./cmd/migrate && \
+    CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -o eve-sde-import-sde \
+    ./cmd/import-sde
 
 # Runtime stage
 FROM alpine:latest
@@ -29,6 +37,8 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /build/eve-sde-server .
+COPY --from=builder /build/eve-sde-migrate .
+COPY --from=builder /build/eve-sde-import-sde .
 COPY --from=builder /build/api ./api
 COPY --from=builder /build/web ./web
 
@@ -42,5 +52,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run server
-CMD ["./eve-sde-server"]
+# Initialize the SQLite schema, then run server
+CMD ["sh", "-c", "./eve-sde-migrate && ./eve-sde-server"]
