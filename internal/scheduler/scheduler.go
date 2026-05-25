@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -80,8 +81,12 @@ func (s *Scheduler) updateSDE() error {
 
 	// Check if this version is already imported
 	var existingChecksum string
-	s.db.QueryRow("SELECT checksum FROM sde_versions WHERE checksum = ? LIMIT 1", checksum).Scan(&existingChecksum)
+	err = s.db.QueryRow("SELECT checksum FROM sde_versions WHERE checksum = ? LIMIT 1", checksum).Scan(&existingChecksum)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Debug().Err(err).Msg("could not check existing SDE checksum")
+	}
 	if existingChecksum == checksum {
+		s.lastCheck = time.Now()
 		log.Info().Msg("SDE version already imported, skipping")
 		return nil
 	}
@@ -100,11 +105,28 @@ func (s *Scheduler) updateSDE() error {
 		return err
 	}
 
+	var itemCount int
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM items").Scan(&itemCount); err != nil {
+		return err
+	}
+
 	// Record version
 	_, err = s.db.Exec(`
-		INSERT INTO sde_versions (version, checksum, downloaded_at)
-		VALUES (?, ?, ?)
-	`, time.Now().Format("20060102"), checksum, time.Now())
+		INSERT INTO sde_versions (
+			version,
+			checksum,
+			downloaded_at,
+			imported_at,
+			import_duration_seconds,
+			items_count
+		)
+		VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT(checksum) DO UPDATE SET
+			imported_at = excluded.imported_at,
+			import_duration_seconds = excluded.import_duration_seconds,
+			items_count = excluded.items_count,
+			error = NULL
+	`, time.Now().Format("20060102"), checksum, time.Now(), time.Now(), int(time.Since(start).Seconds()), itemCount)
 
 	s.lastCheck = time.Now()
 

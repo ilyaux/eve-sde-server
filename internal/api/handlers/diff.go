@@ -81,8 +81,9 @@ func (h *DiffHandler) GetChangelog(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		// Table exists, query it
 		rows, err := h.db.Query(`
-			SELECT version, imported_at, item_count
+			SELECT version, imported_at, items_count
 			FROM sde_versions
+			WHERE imported_at IS NOT NULL
 			ORDER BY imported_at DESC
 			LIMIT 10
 		`)
@@ -92,9 +93,17 @@ func (h *DiffHandler) GetChangelog(w http.ResponseWriter, r *http.Request) {
 			defer rows.Close()
 			for rows.Next() {
 				var v Version
-				if err := rows.Scan(&v.Version, &v.ImportedAt, &v.ItemCount); err != nil {
+				var importedAt sql.NullString
+				var itemCount sql.NullInt64
+				if err := rows.Scan(&v.Version, &importedAt, &itemCount); err != nil {
 					log.Error().Err(err).Msg("Failed to scan version")
 					continue
+				}
+				if importedAt.Valid {
+					v.ImportedAt = importedAt.String
+				}
+				if itemCount.Valid {
+					v.ItemCount = int(itemCount.Int64)
 				}
 				versions = append(versions, v)
 			}
