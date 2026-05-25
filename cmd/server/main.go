@@ -17,13 +17,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ilya/eve-sde-server/internal/api/handlers"
-	apimiddleware "github.com/ilya/eve-sde-server/internal/api/middleware"
-	"github.com/ilya/eve-sde-server/internal/auth"
-	"github.com/ilya/eve-sde-server/internal/cache"
-	"github.com/ilya/eve-sde-server/internal/config"
-	"github.com/ilya/eve-sde-server/internal/database"
-	"github.com/ilya/eve-sde-server/internal/scheduler"
+	"github.com/ilyaux/eve-sde-server/internal/api/handlers"
+	apimiddleware "github.com/ilyaux/eve-sde-server/internal/api/middleware"
+	"github.com/ilyaux/eve-sde-server/internal/auth"
+	"github.com/ilyaux/eve-sde-server/internal/cache"
+	"github.com/ilyaux/eve-sde-server/internal/config"
+	"github.com/ilyaux/eve-sde-server/internal/database"
+	"github.com/ilyaux/eve-sde-server/internal/scheduler"
 )
 
 func main() {

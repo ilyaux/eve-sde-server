@@ -26,10 +26,10 @@ data/
 *.db-wal
 *.zip
 
-# SDE downloads
-sde/
-fsd/
-bsd/
+# SDE downloads (root-level only; do not ignore internal/sde package)
+/sde/
+/fsd/
+/bsd/
 
 # Environment files
 .env

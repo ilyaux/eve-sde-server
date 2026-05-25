@@ -5,15 +5,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya/eve-sde-server/internal/esi"
+	"github.com/ilyaux/eve-sde-server/internal/esi"
 	"github.com/rs/zerolog/log"
 )
 
 type ESIHandler struct {
 	client *esi.Client
+	mu     sync.RWMutex
 	cache  map[string]cacheEntry // Simple in-memory cache
 }
 
@@ -40,11 +42,11 @@ func (h *ESIHandler) Proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check cache
-	if entry, ok := h.cache[path]; ok && time.Now().Before(entry.expiresAt) {
+	if data, ok := h.getCached(path); ok {
 		log.Debug().Str("path", path).Msg("ESI cache hit")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Cache", "HIT")
-		w.Write(entry.data)
+		w.Write(data)
 		return
 	}
 
@@ -58,10 +60,7 @@ func (h *ESIHandler) Proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cache for 5 minutes
-	h.cache[path] = cacheEntry{
-		data:      data,
-		expiresAt: time.Now().Add(5 * time.Minute),
-	}
+	h.setCached(path, data, 5*time.Minute)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Cache", "MISS")
@@ -79,10 +78,10 @@ func (h *ESIHandler) GetTypeInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cacheKey := "type_" + typeIDStr
-	if entry, ok := h.cache[cacheKey]; ok && time.Now().Before(entry.expiresAt) {
+	if data, ok := h.getCached(cacheKey); ok {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Cache", "HIT")
-		w.Write(entry.data)
+		w.Write(data)
 		return
 	}
 
@@ -94,10 +93,7 @@ func (h *ESIHandler) GetTypeInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(info)
-	h.cache[cacheKey] = cacheEntry{
-		data:      data,
-		expiresAt: time.Now().Add(1 * time.Hour), // Type info rarely changes
-	}
+	h.setCached(cacheKey, data, 1*time.Hour) // Type info rarely changes
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Cache", "MISS")
@@ -107,10 +103,10 @@ func (h *ESIHandler) GetTypeInfo(w http.ResponseWriter, r *http.Request) {
 // GetMarketPrices fetches current market prices
 func (h *ESIHandler) GetMarketPrices(w http.ResponseWriter, r *http.Request) {
 	cacheKey := "market_prices"
-	if entry, ok := h.cache[cacheKey]; ok && time.Now().Before(entry.expiresAt) {
+	if data, ok := h.getCached(cacheKey); ok {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Cache", "HIT")
-		w.Write(entry.data)
+		w.Write(data)
 		return
 	}
 
@@ -122,10 +118,7 @@ func (h *ESIHandler) GetMarketPrices(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(prices)
-	h.cache[cacheKey] = cacheEntry{
-		data:      data,
-		expiresAt: time.Now().Add(10 * time.Minute), // Prices update frequently
-	}
+	h.setCached(cacheKey, data, 10*time.Minute) // Prices update frequently
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Cache", "MISS")
@@ -150,10 +143,10 @@ func (h *ESIHandler) GetMarketHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cacheKey := "market_history_" + regionIDStr + "_" + typeIDStr
-	if entry, ok := h.cache[cacheKey]; ok && time.Now().Before(entry.expiresAt) {
+	if data, ok := h.getCached(cacheKey); ok {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Cache", "HIT")
-		w.Write(entry.data)
+		w.Write(data)
 		return
 	}
 
@@ -165,10 +158,7 @@ func (h *ESIHandler) GetMarketHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(history)
-	h.cache[cacheKey] = cacheEntry{
-		data:      data,
-		expiresAt: time.Now().Add(1 * time.Hour), // History updates daily
-	}
+	h.setCached(cacheKey, data, 1*time.Hour) // History updates daily
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Cache", "MISS")
@@ -177,8 +167,11 @@ func (h *ESIHandler) GetMarketHistory(w http.ResponseWriter, r *http.Request) {
 
 // ClearCache clears the ESI cache
 func (h *ESIHandler) ClearCache(w http.ResponseWriter, r *http.Request) {
+	h.mu.Lock()
 	count := len(h.cache)
 	h.cache = make(map[string]cacheEntry)
+	h.mu.Unlock()
+
 	log.Info().Int("entries", count).Msg("ESI cache cleared")
 
 	w.Header().Set("Content-Type", "application/json")
@@ -186,4 +179,32 @@ func (h *ESIHandler) ClearCache(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"cleared": count,
 	})
+}
+
+func (h *ESIHandler) getCached(key string) ([]byte, bool) {
+	h.mu.RLock()
+	entry, ok := h.cache[key]
+	h.mu.RUnlock()
+	if !ok {
+		return nil, false
+	}
+	if time.Now().After(entry.expiresAt) {
+		h.mu.Lock()
+		if current, ok := h.cache[key]; ok && time.Now().After(current.expiresAt) {
+			delete(h.cache, key)
+		}
+		h.mu.Unlock()
+		return nil, false
+	}
+
+	return entry.data, true
+}
+
+func (h *ESIHandler) setCached(key string, data []byte, ttl time.Duration) {
+	h.mu.Lock()
+	h.cache[key] = cacheEntry{
+		data:      data,
+		expiresAt: time.Now().Add(ttl),
+	}
+	h.mu.Unlock()
 }

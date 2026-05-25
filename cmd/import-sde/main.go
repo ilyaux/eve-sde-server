@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ilya/eve-sde-server/internal/database"
-	"github.com/ilya/eve-sde-server/internal/sde"
+	"github.com/ilyaux/eve-sde-server/internal/database"
+	"github.com/ilyaux/eve-sde-server/internal/sde"
 )
 
 func main() {

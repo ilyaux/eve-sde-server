@@ -16,7 +16,7 @@ type APIKey struct {
 	ID        int64
 	Key       string
 	Name      string
-	RateLimit int       // requests per minute
+	RateLimit int // requests per minute
 	CreatedAt time.Time
 	ExpiresAt *time.Time
 	Active    bool

@@ -4,7 +4,7 @@
 
 Modern REST & GraphQL API for EVE Online Static Data Export (SDE) with auto-updates, full-text search, and production-ready features.
 
-[![Go Version](https://img.shields.io/badge/go-1.22+-blue.svg)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/go-1.24+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com)
 [![EVE Online](https://img.shields.io/badge/EVE-Online-yellow.svg)](https://www.eveonline.com/)
@@ -63,6 +63,9 @@ docker run -p 8080:8080 -v sde-data:/app/data eve-sde-server
 ```bash
 # Install dependencies
 go mod download
+
+# Create the local SQLite schema with sample data
+make migrate
 
 # Run server
 go run cmd/server/main.go

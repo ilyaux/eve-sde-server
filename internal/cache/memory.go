@@ -11,7 +11,13 @@ import (
 
 // MemoryCache implements Cache using in-memory storage
 type MemoryCache struct {
-	cache *bigcache.BigCache
+	cache      *bigcache.BigCache
+	defaultTTL time.Duration
+}
+
+type memoryEntry struct {
+	ExpiresAt int64           `json:"expires_at"`
+	Payload   json.RawMessage `json:"payload"`
 }
 
 // NewMemoryCache creates a new in-memory cache with optimized configuration
@@ -19,10 +25,10 @@ func NewMemoryCache(ttl time.Duration, maxSizeMB int) (*MemoryCache, error) {
 	config := bigcache.DefaultConfig(ttl)
 	config.HardMaxCacheSize = maxSizeMB
 	config.Verbose = false
-	config.Shards = 1024                     // More shards = less lock contention
-	config.MaxEntriesInWindow = 1000 * 10 * 60  // Optimize for high throughput
-	config.MaxEntrySize = 500                // Limit individual entry size (500 bytes)
-	config.CleanWindow = 1 * time.Minute     // Clean expired entries every minute
+	config.Shards = 1024                       // More shards = less lock contention
+	config.MaxEntriesInWindow = 1000 * 10 * 60 // Optimize for high throughput
+	config.MaxEntrySize = 500                  // Limit individual entry size (500 bytes)
+	config.CleanWindow = 1 * time.Minute       // Clean expired entries every minute
 
 	cache, err := bigcache.New(context.Background(), config)
 	if err != nil {
@@ -35,7 +41,7 @@ func NewMemoryCache(ttl time.Duration, maxSizeMB int) (*MemoryCache, error) {
 		Int("shards", config.Shards).
 		Msg("in-memory cache created with optimized configuration")
 
-	return &MemoryCache{cache: cache}, nil
+	return &MemoryCache{cache: cache, defaultTTL: ttl}, nil
 }
 
 // Get retrieves a value from cache
@@ -48,12 +54,35 @@ func (c *MemoryCache) Get(ctx context.Context, key string, dest interface{}) err
 		return err
 	}
 
-	return json.Unmarshal(data, dest)
+	var entry memoryEntry
+	if err := json.Unmarshal(data, &entry); err != nil {
+		return err
+	}
+	if entry.ExpiresAt > 0 && time.Now().UnixNano() > entry.ExpiresAt {
+		_ = c.cache.Delete(key)
+		return ErrCacheMiss
+	}
+
+	return json.Unmarshal(entry.Payload, dest)
 }
 
 // Set stores a value in cache
 func (c *MemoryCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-	data, err := json.Marshal(value)
+	payload, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	if ttl <= 0 {
+		ttl = c.defaultTTL
+	}
+
+	entry := memoryEntry{
+		ExpiresAt: time.Now().Add(ttl).UnixNano(),
+		Payload:   payload,
+	}
+
+	data, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}

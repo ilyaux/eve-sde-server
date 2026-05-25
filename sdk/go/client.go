@@ -42,6 +42,18 @@ type Item struct {
 type SearchResult struct {
 	Data []Item `json:"data"`
 	Meta struct {
+		Count  int `json:"count"`
+		Total  int `json:"total"`
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+	} `json:"meta"`
+}
+
+// ListResult represents a paginated item list response.
+type ListResult struct {
+	Data []Item `json:"data"`
+	Meta struct {
+		Count  int `json:"count"`
 		Total  int `json:"total"`
 		Limit  int `json:"limit"`
 		Offset int `json:"offset"`
@@ -102,6 +114,16 @@ func (c *Client) GetItem(typeID int) (*Item, error) {
 
 // ListItems retrieves a list of items with pagination
 func (c *Client) ListItems(limit, offset int) ([]Item, error) {
+	result, err := c.ListItemsWithMeta(limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Data, nil
+}
+
+// ListItemsWithMeta retrieves items and pagination metadata.
+func (c *Client) ListItemsWithMeta(limit, offset int) (*ListResult, error) {
 	query := url.Values{}
 	if limit > 0 {
 		query.Set("limit", fmt.Sprintf("%d", limit))
@@ -115,12 +137,12 @@ func (c *Client) ListItems(limit, offset int) ([]Item, error) {
 		return nil, err
 	}
 
-	var items []Item
-	if err := json.Unmarshal(data, &items); err != nil {
+	var result ListResult
+	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return items, nil
+	return &result, nil
 }
 
 // Search searches for items by name or description

@@ -18,11 +18,11 @@ func NewDiffHandler(db *sql.DB) *DiffHandler {
 
 // ItemChange represents a change to an item
 type ItemChange struct {
-	TypeID      int    `json:"type_id"`
-	Name        string `json:"name"`
-	ChangeType  string `json:"change_type"` // "added", "removed", "modified"
-	OldValue    string `json:"old_value,omitempty"`
-	NewValue    string `json:"new_value,omitempty"`
+	TypeID       int    `json:"type_id"`
+	Name         string `json:"name"`
+	ChangeType   string `json:"change_type"` // "added", "removed", "modified"
+	OldValue     string `json:"old_value,omitempty"`
+	NewValue     string `json:"new_value,omitempty"`
 	FieldChanged string `json:"field_changed,omitempty"`
 }
 

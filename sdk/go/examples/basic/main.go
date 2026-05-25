@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	evesde "github.com/ilya/eve-sde-server/sdk/go"
+	evesde "github.com/ilyaux/eve-sde-server/sdk/go"
 )
 
 func main() {
@@ -47,11 +47,12 @@ func main() {
 
 	// List items with pagination
 	fmt.Println("=== List First 10 Items ===")
-	items, err := client.ListItems(10, 0)
+	list, err := client.ListItemsWithMeta(10, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	for i, item := range items {
+	fmt.Printf("Total items: %d\n", list.Meta.Total)
+	for i, item := range list.Data {
 		fmt.Printf("%d. %s (ID: %d, Volume: %.2f m³)\n", i+1, item.Name, item.TypeID, item.Volume)
 	}
 }

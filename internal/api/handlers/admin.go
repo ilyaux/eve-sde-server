@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya/eve-sde-server/internal/auth"
+	"github.com/ilyaux/eve-sde-server/internal/auth"
 	"github.com/rs/zerolog/log"
 )
 

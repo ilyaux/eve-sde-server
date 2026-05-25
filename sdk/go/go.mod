@@ -1,3 +1,3 @@
-module github.com/ilya/eve-sde-server/sdk/go
+module github.com/ilyaux/eve-sde-server/sdk/go
 
-go 1.22
+go 1.24.0

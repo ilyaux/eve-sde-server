@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ilya/eve-sde-server/internal/scheduler"
+	"github.com/ilyaux/eve-sde-server/internal/scheduler"
 	"github.com/rs/zerolog/log"
 )
 

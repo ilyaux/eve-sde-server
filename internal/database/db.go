@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -9,16 +11,25 @@ import (
 )
 
 func New(path string) (*sql.DB, error) {
+	if path != "" && path != ":memory:" {
+		dir := filepath.Dir(path)
+		if dir != "." {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, err
 	}
 
 	// Configure connection pool for optimal performance
-	db.SetMaxOpenConns(25)                  // Maximum 25 concurrent connections
-	db.SetMaxIdleConns(5)                   // Keep 5 idle connections ready
-	db.SetConnMaxLifetime(5 * time.Minute)  // Recycle connections every 5 minutes
-	db.SetConnMaxIdleTime(1 * time.Minute)  // Close idle connections after 1 minute
+	db.SetMaxOpenConns(25)                 // Maximum 25 concurrent connections
+	db.SetMaxIdleConns(5)                  // Keep 5 idle connections ready
+	db.SetConnMaxLifetime(5 * time.Minute) // Recycle connections every 5 minutes
+	db.SetConnMaxIdleTime(1 * time.Minute) // Close idle connections after 1 minute
 
 	// Enable WAL mode for better concurrency
 	_, err = db.Exec("PRAGMA journal_mode=WAL;")

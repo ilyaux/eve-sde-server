@@ -1,6 +1,6 @@
-module github.com/ilya/eve-sde-server
+module github.com/ilyaux/eve-sde-server
 
-go 1.25.4
+go 1.24.0
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0

@@ -7,7 +7,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ilya/eve-sde-server/internal/sde"
+	"github.com/ilyaux/eve-sde-server/internal/sde"
 )
 
 // Scheduler handles automatic SDE updates

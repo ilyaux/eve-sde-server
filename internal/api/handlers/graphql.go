@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/graphql-go/handler"
-	customgraphql "github.com/ilya/eve-sde-server/internal/graphql"
+	customgraphql "github.com/ilyaux/eve-sde-server/internal/graphql"
 	"github.com/rs/zerolog/log"
 )
 

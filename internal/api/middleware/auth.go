@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ilya/eve-sde-server/internal/auth"
+	"github.com/ilyaux/eve-sde-server/internal/auth"
 	"github.com/rs/zerolog/log"
 )
 

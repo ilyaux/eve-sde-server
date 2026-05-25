@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ilya/eve-sde-server/internal/cache"
+	"github.com/ilyaux/eve-sde-server/internal/cache"
 	"github.com/rs/zerolog/log"
 )
 

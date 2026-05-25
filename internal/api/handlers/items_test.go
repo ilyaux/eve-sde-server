@@ -144,27 +144,27 @@ func TestItemHandler_List(t *testing.T) {
 	handler := NewItemHandler(db)
 
 	tests := []struct {
-		name          string
-		query         string
-		expectedCount int
+		name           string
+		query          string
+		expectedCount  int
 		expectedStatus int
 	}{
 		{
-			name:          "List all items (default limit)",
-			query:         "",
-			expectedCount: 3,
+			name:           "List all items (default limit)",
+			query:          "",
+			expectedCount:  3,
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:          "List with limit=2",
-			query:         "?limit=2",
-			expectedCount: 3, // Note: handler doesn't implement limit yet
+			name:           "List with limit=2",
+			query:          "?limit=2",
+			expectedCount:  2,
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:          "List with offset=1",
-			query:         "?offset=1",
-			expectedCount: 3, // Note: handler doesn't implement offset yet
+			name:           "List with offset=1",
+			query:          "?offset=1",
+			expectedCount:  2,
 			expectedStatus: http.StatusOK,
 		},
 	}
@@ -204,32 +204,32 @@ func TestItemHandler_Search(t *testing.T) {
 	handler := NewItemHandler(db)
 
 	tests := []struct {
-		name          string
-		query         string
-		expectedCount int
+		name           string
+		query          string
+		expectedCount  int
 		expectedStatus int
 	}{
 		{
-			name:          "Search for 'Tritanium'",
-			query:         "?q=Tritanium",
-			expectedCount: 1,
+			name:           "Search for 'Tritanium'",
+			query:          "?q=Tritanium",
+			expectedCount:  1,
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:          "Search for 'mineral' (multiple results)",
-			query:         "?q=mineral",
-			expectedCount: 2,
+			name:           "Search for 'mineral' (multiple results)",
+			query:          "?q=mineral",
+			expectedCount:  2,
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:          "Search with no query",
-			query:         "",
+			name:           "Search with no query",
+			query:          "",
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:          "Search for non-existent term",
-			query:         "?q=nonexistent",
-			expectedCount: 0,
+			name:           "Search for non-existent term",
+			query:          "?q=nonexistent",
+			expectedCount:  0,
 			expectedStatus: http.StatusOK,
 		},
 	}
