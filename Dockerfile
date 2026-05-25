@@ -6,6 +6,10 @@ RUN apk add --no-cache git make
 
 WORKDIR /build
 
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_DATE=unknown
+
 # Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
@@ -15,7 +19,7 @@ COPY . .
 
 # Build binaries
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w" \
+    -ldflags="-s -w -X main.buildVersion=${VERSION} -X main.buildCommit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
     -o eve-sde-server \
     ./cmd/server && \
     CGO_ENABLED=0 GOOS=linux go build \

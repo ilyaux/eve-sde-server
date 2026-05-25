@@ -21,6 +21,8 @@ func TestOpenAPIDocumentsServerRoutes(t *testing.T) {
 
 	expectedPaths := []string{
 		"/health",
+		"/ready",
+		"/version",
 		"/api/v1/items",
 		"/api/v1/items/{id}",
 		"/api/v1/search",

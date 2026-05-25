@@ -84,6 +84,9 @@ Environment variables:
 | `ADMIN_PASSWORD` | `admin` | Basic auth password for `/admin`. |
 | `SDE_AUTO_UPDATE` | `false` | Enables scheduled SDE update checks. |
 | `SDE_URL` | CCP SDE URL | SDE zip download URL. |
+| `SDE_DATA_DIR` | `data` | Directory used for SDE downloads and extraction. |
+| `CACHE_TTL` | `60s` | Response cache TTL, parsed as a Go duration. |
+| `CACHE_MAX_SIZE_MB` | `100` | Maximum in-memory response cache size. |
 
 For public deployments, set explicit `ALLOWED_ORIGINS`, enable TLS at the edge,
 and replace the default admin credentials.
@@ -129,6 +132,15 @@ List and search responses use this shape:
 ```
 
 OpenAPI documentation is served at `http://localhost:8080/docs`.
+
+Operational endpoints are public so orchestrators and monitoring systems can
+check the service without an API key:
+
+```bash
+GET /health
+GET /ready
+GET /version
+```
 
 ## GraphQL
 
@@ -187,6 +199,8 @@ results, err := client.Search("tritanium", 10)
 list, err := client.ListItemsWithMeta(50, 0)
 categories, err := client.ListCategories(50, 0)
 groups, err := client.ListGroups(6, 50, 0)
+ready, err := client.Ready()
+version, err := client.Version()
 ```
 
 ## Development

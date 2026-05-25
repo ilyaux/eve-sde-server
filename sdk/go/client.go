@@ -97,6 +97,31 @@ type GroupResult struct {
 	} `json:"meta"`
 }
 
+// HealthStatus represents the public liveness response.
+type HealthStatus struct {
+	Status        string `json:"status"`
+	UptimeSeconds int64  `json:"uptime_seconds"`
+	Timestamp     string `json:"timestamp"`
+}
+
+// ServerVersion represents server build metadata.
+type ServerVersion struct {
+	Version   string `json:"version"`
+	Commit    string `json:"commit"`
+	BuildDate string `json:"build_date"`
+	GoVersion string `json:"go_version"`
+}
+
+// ReadinessStatus represents the public readiness response.
+type ReadinessStatus struct {
+	Status              string            `json:"status"`
+	Checks              map[string]string `json:"checks"`
+	ItemsCount          int               `json:"items_count"`
+	LatestSDEVersion    *string           `json:"latest_sde_version"`
+	LatestSDEImportedAt *string           `json:"latest_sde_imported_at"`
+	Version             ServerVersion     `json:"version"`
+}
+
 // doRequest performs an HTTP request with authentication
 func (c *Client) doRequest(method, path string, query url.Values) ([]byte, error) {
 	url := c.BaseURL + path
@@ -285,17 +310,57 @@ func (c *Client) ListGroups(categoryID, limit, offset int) (*GroupResult, error)
 	return &result, nil
 }
 
-// Health checks the server health
-func (c *Client) Health() (bool, error) {
+// HealthStatus returns liveness details from the server.
+func (c *Client) HealthStatus() (*HealthStatus, error) {
 	data, err := c.doRequest("GET", "/health", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result HealthStatus
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// Health checks whether the server liveness endpoint reports OK.
+func (c *Client) Health() (bool, error) {
+	status, err := c.HealthStatus()
 	if err != nil {
 		return false, err
 	}
 
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return false, err
+	return status.Status == "OK", nil
+}
+
+// Ready returns readiness details, including dependency checks and SDE metadata.
+func (c *Client) Ready() (*ReadinessStatus, error) {
+	data, err := c.doRequest("GET", "/ready", nil)
+	if err != nil {
+		return nil, err
 	}
 
-	return result["status"] == "OK", nil
+	var result ReadinessStatus
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// Version returns server build metadata.
+func (c *Client) Version() (*ServerVersion, error) {
+	data, err := c.doRequest("GET", "/version", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result ServerVersion
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

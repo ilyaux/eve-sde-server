@@ -1,5 +1,10 @@
 .PHONY: help run build test migrate migrate-down clean docker docker-run download-sde
 
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS := -X main.buildVersion=$(VERSION) -X main.buildCommit=$(COMMIT) -X main.buildDate=$(BUILD_DATE)
+
 help: ## Show this help message
 	@echo 'Usage: make [target]'
 	@echo ''
@@ -12,7 +17,7 @@ run: ## Run the server locally
 
 build: ## Build the binary
 	@mkdir -p bin
-	@go build -o bin/eve-sde-server cmd/server/main.go
+	@go build -ldflags "$(LDFLAGS)" -o bin/eve-sde-server cmd/server/main.go
 	@echo "Binary built: bin/eve-sde-server"
 
 test: ## Run tests
@@ -47,7 +52,7 @@ clean: ## Clean build artifacts and data
 	@echo "Cleaned build artifacts"
 
 docker: ## Build Docker image
-	@docker build -t eve-sde-server .
+	@docker build --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg BUILD_DATE=$(BUILD_DATE) -t eve-sde-server .
 
 docker-run: ## Run Docker container
 	@docker run -p 8080:8080 -v $$(pwd)/data:/app/data eve-sde-server

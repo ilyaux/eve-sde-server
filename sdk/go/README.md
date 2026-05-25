@@ -73,6 +73,10 @@ healthy, err := client.Health()
 if err != nil {
     log.Fatal(err)
 }
+
+health, err := client.HealthStatus()
+ready, err := client.Ready()
+version, err := client.Version()
 ```
 
 ## Types

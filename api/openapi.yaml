@@ -40,7 +40,7 @@ paths:
   /health:
     get:
       summary: Health check
-      description: Returns the health status of the server
+      description: Returns public liveness status for the server.
       tags:
         - Health
       responses:
@@ -49,11 +49,41 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: OK
+                $ref: '#/components/schemas/HealthStatus'
+
+  /ready:
+    get:
+      summary: Readiness check
+      description: Returns dependency checks and SDE import metadata for orchestration readiness probes.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server is ready to serve API traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+        '503':
+          description: Server is not ready to serve API traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+
+  /version:
+    get:
+      summary: Build metadata
+      description: Returns build version, commit, build date, and Go runtime version.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Build metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerVersion'
 
   /api/v1/items:
     get:
@@ -720,6 +750,85 @@ components:
       description: HTTP Basic Auth credentials from ADMIN_USERNAME and ADMIN_PASSWORD.
 
   schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: OK
+        uptime_seconds:
+          type: integer
+          format: int64
+          example: 42
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-05-25T13:00:00Z"
+      required:
+        - status
+        - uptime_seconds
+        - timestamp
+
+    ServerVersion:
+      type: object
+      properties:
+        version:
+          type: string
+          example: v1.0.0
+        commit:
+          type: string
+          example: abc1234
+        build_date:
+          type: string
+          example: "2026-05-25T13:00:00Z"
+        go_version:
+          type: string
+          example: go1.25.0
+      required:
+        - version
+        - commit
+        - build_date
+        - go_version
+
+    ReadinessStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+            - not_ready
+          example: ready
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            database: ok
+            items: ok
+            sde_version: not_imported
+        items_count:
+          type: integer
+          example: 25000
+        latest_sde_version:
+          type: string
+          nullable: true
+          example: "20260525"
+        latest_sde_imported_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-05-25T13:00:00Z"
+        version:
+          $ref: '#/components/schemas/ServerVersion'
+      required:
+        - status
+        - checks
+        - items_count
+        - latest_sde_version
+        - latest_sde_imported_at
+        - version
+
     Item:
       type: object
       properties:
