@@ -18,6 +18,7 @@ published; entries currently track unreleased work on `main`.
 - Community contribution, security, issue, and pull request templates.
 - Public `/ready` and `/version` operational endpoints.
 - Go SDK helpers for liveness, readiness, and server version metadata.
+- Go SDK helpers for SDE diff/changelog and cached ESI proxy endpoints.
 
 ### Changed
 

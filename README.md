@@ -199,6 +199,8 @@ results, err := client.Search("tritanium", 10)
 list, err := client.ListItemsWithMeta(50, 0)
 categories, err := client.ListCategories(50, 0)
 groups, err := client.ListGroups(6, 50, 0)
+changelog, err := client.Changelog()
+typeInfo, err := client.ESITypeInfo(34)
 ready, err := client.Ready()
 version, err := client.Version()
 ```

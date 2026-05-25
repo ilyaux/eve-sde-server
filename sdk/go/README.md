@@ -66,6 +66,27 @@ allGroups, err := client.ListGroups(0, 50, 0)
 
 Pass `categoryID <= 0` to `ListGroups` to list groups across all categories.
 
+## SDE Versions
+
+```go
+changelog, err := client.Changelog()
+diff, err := client.Diff("20250101", "20250201")
+```
+
+`Diff` uses version identifiers tracked by the server during imports. When no
+historical snapshots are available, the server returns an empty diff with a
+note.
+
+## ESI Proxy
+
+```go
+typeInfo, err := client.ESITypeInfo(34)
+prices, err := client.ESIMarketPrices()
+history, err := client.ESIMarketHistory(10000002, 34)
+```
+
+These helpers call the server-side cached ESI proxy rather than ESI directly.
+
 ## Health
 
 ```go

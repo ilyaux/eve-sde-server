@@ -122,6 +122,46 @@ type ReadinessStatus struct {
 	Version             ServerVersion     `json:"version"`
 }
 
+// ItemChange represents a change between two SDE versions.
+type ItemChange struct {
+	TypeID       int    `json:"type_id"`
+	Name         string `json:"name"`
+	ChangeType   string `json:"change_type"`
+	OldValue     string `json:"old_value,omitempty"`
+	NewValue     string `json:"new_value,omitempty"`
+	FieldChanged string `json:"field_changed,omitempty"`
+}
+
+// DiffSummary summarizes SDE version changes by type.
+type DiffSummary struct {
+	Added    int `json:"added"`
+	Removed  int `json:"removed"`
+	Modified int `json:"modified"`
+}
+
+// DiffResponse represents a response from /api/v1/diff.
+type DiffResponse struct {
+	FromVersion string       `json:"from_version"`
+	ToVersion   string       `json:"to_version"`
+	Changes     []ItemChange `json:"changes"`
+	Summary     DiffSummary  `json:"summary"`
+	Note        string       `json:"note,omitempty"`
+}
+
+// SDEVersion represents one imported SDE version in the changelog.
+type SDEVersion struct {
+	Version    string `json:"version"`
+	ImportedAt string `json:"imported_at"`
+	ItemCount  int    `json:"item_count"`
+}
+
+// ChangelogResponse represents recent SDE import history.
+type ChangelogResponse struct {
+	Versions []SDEVersion `json:"versions"`
+	Count    int          `json:"count"`
+	Note     string       `json:"note,omitempty"`
+}
+
 // doRequest performs an HTTP request with authentication
 func (c *Client) doRequest(method, path string, query url.Values) ([]byte, error) {
 	url := c.BaseURL + path
@@ -308,6 +348,87 @@ func (c *Client) ListGroups(categoryID, limit, offset int) (*GroupResult, error)
 	}
 
 	return &result, nil
+}
+
+// Diff compares two SDE version identifiers.
+func (c *Client) Diff(fromVersion, toVersion string) (*DiffResponse, error) {
+	query := url.Values{}
+	query.Set("from", fromVersion)
+	query.Set("to", toVersion)
+
+	data, err := c.doRequest("GET", "/api/v1/diff", query)
+	if err != nil {
+		return nil, err
+	}
+
+	var result DiffResponse
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// Changelog returns recent SDE import history.
+func (c *Client) Changelog() (*ChangelogResponse, error) {
+	data, err := c.doRequest("GET", "/api/v1/changelog", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result ChangelogResponse
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// ESITypeInfo returns proxied ESI type information.
+func (c *Client) ESITypeInfo(typeID int) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/esi/types/%d", typeID)
+	data, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result, nil
+}
+
+// ESIMarketPrices returns proxied ESI market prices.
+func (c *Client) ESIMarketPrices() ([]map[string]interface{}, error) {
+	data, err := c.doRequest("GET", "/api/esi/markets/prices", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result, nil
+}
+
+// ESIMarketHistory returns proxied ESI market history for a region and type.
+func (c *Client) ESIMarketHistory(regionID, typeID int) ([]map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/esi/markets/%d/history/%d", regionID, typeID)
+	data, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result, nil
 }
 
 // HealthStatus returns liveness details from the server.
