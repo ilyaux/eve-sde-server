@@ -88,12 +88,13 @@ func (h *AdminHandler) ListKeys(w http.ResponseWriter, r *http.Request) {
 		}
 
 		keyData := map[string]interface{}{
-			"id":         id,
-			"key":        key, // In production, you might want to hide this
-			"name":       name,
-			"rate_limit": rateLimit,
-			"created_at": createdAt,
-			"active":     active,
+			"id":          id,
+			"key":         maskAPIKey(key),
+			"key_preview": maskAPIKey(key),
+			"name":        name,
+			"rate_limit":  rateLimit,
+			"created_at":  createdAt,
+			"active":      active,
 		}
 
 		if expiresAt.Valid {
@@ -199,4 +200,12 @@ func (h *AdminHandler) RevokeKey(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"success":true,"message":"key revoked"}`))
+}
+
+func maskAPIKey(key string) string {
+	if len(key) <= 12 {
+		return "********"
+	}
+
+	return key[:8] + "..." + key[len(key)-4:]
 }

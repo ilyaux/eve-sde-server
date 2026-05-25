@@ -38,6 +38,21 @@ type Item struct {
 	CategoryID  int     `json:"category_id,omitempty"`
 }
 
+// Category represents an EVE inventory category.
+type Category struct {
+	CategoryID int    `json:"category_id"`
+	Name       string `json:"name"`
+	Published  bool   `json:"published"`
+}
+
+// Group represents an EVE inventory group.
+type Group struct {
+	GroupID    int    `json:"group_id"`
+	CategoryID int    `json:"category_id"`
+	Name       string `json:"name"`
+	Published  bool   `json:"published"`
+}
+
 // SearchResult represents search results
 type SearchResult struct {
 	Data []Item `json:"data"`
@@ -52,6 +67,28 @@ type SearchResult struct {
 // ListResult represents a paginated item list response.
 type ListResult struct {
 	Data []Item `json:"data"`
+	Meta struct {
+		Count  int `json:"count"`
+		Total  int `json:"total"`
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+	} `json:"meta"`
+}
+
+// CategoryResult represents a paginated category list response.
+type CategoryResult struct {
+	Data []Category `json:"data"`
+	Meta struct {
+		Count  int `json:"count"`
+		Total  int `json:"total"`
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+	} `json:"meta"`
+}
+
+// GroupResult represents a paginated group list response.
+type GroupResult struct {
+	Data []Group `json:"data"`
 	Meta struct {
 		Count  int `json:"count"`
 		Total  int `json:"total"`
@@ -159,6 +196,88 @@ func (c *Client) Search(query string, limit int) (*SearchResult, error) {
 	}
 
 	var result SearchResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetCategory retrieves a category by ID.
+func (c *Client) GetCategory(categoryID int) (*Category, error) {
+	path := fmt.Sprintf("/api/v1/categories/%d", categoryID)
+	data, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var category Category
+	if err := json.Unmarshal(data, &category); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &category, nil
+}
+
+// ListCategories retrieves categories and pagination metadata.
+func (c *Client) ListCategories(limit, offset int) (*CategoryResult, error) {
+	query := url.Values{}
+	if limit > 0 {
+		query.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	if offset > 0 {
+		query.Set("offset", fmt.Sprintf("%d", offset))
+	}
+
+	data, err := c.doRequest("GET", "/api/v1/categories", query)
+	if err != nil {
+		return nil, err
+	}
+
+	var result CategoryResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetGroup retrieves a group by ID.
+func (c *Client) GetGroup(groupID int) (*Group, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d", groupID)
+	data, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var group Group
+	if err := json.Unmarshal(data, &group); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &group, nil
+}
+
+// ListGroups retrieves groups and pagination metadata.
+// Pass categoryID <= 0 to list groups across all categories.
+func (c *Client) ListGroups(categoryID, limit, offset int) (*GroupResult, error) {
+	query := url.Values{}
+	if categoryID > 0 {
+		query.Set("category_id", fmt.Sprintf("%d", categoryID))
+	}
+	if limit > 0 {
+		query.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	if offset > 0 {
+		query.Set("offset", fmt.Sprintf("%d", offset))
+	}
+
+	data, err := c.doRequest("GET", "/api/v1/groups", query)
+	if err != nil {
+		return nil, err
+	}
+
+	var result GroupResult
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}

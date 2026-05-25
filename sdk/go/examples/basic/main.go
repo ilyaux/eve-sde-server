@@ -55,4 +55,13 @@ func main() {
 	for i, item := range list.Data {
 		fmt.Printf("%d. %s (ID: %d, Volume: %.2f m³)\n", i+1, item.Name, item.TypeID, item.Volume)
 	}
+
+	fmt.Println("\n=== Categories ===")
+	categories, err := client.ListCategories(5, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, category := range categories.Data {
+		fmt.Printf("- %s (ID: %d)\n", category.Name, category.CategoryID)
+	}
 }

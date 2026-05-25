@@ -161,6 +161,7 @@ func main() {
 
 	// API routes with caching
 	itemHandler := handlers.NewItemHandler(db)
+	taxonomyHandler := handlers.NewTaxonomyHandler(db)
 	diffHandler := handlers.NewDiffHandler(db)
 	r.Route("/api/v1", func(r chi.Router) {
 		// Apply cache middleware to all GET endpoints
@@ -169,6 +170,11 @@ func main() {
 		r.Get("/items", itemHandler.List)
 		r.Get("/items/{id}", itemHandler.Get)
 		r.Get("/search", itemHandler.Search)
+		r.Get("/categories", taxonomyHandler.ListCategories)
+		r.Get("/categories/{id}", taxonomyHandler.GetCategory)
+		r.Get("/categories/{id}/groups", taxonomyHandler.ListCategoryGroups)
+		r.Get("/groups", taxonomyHandler.ListGroups)
+		r.Get("/groups/{id}", taxonomyHandler.GetGroup)
 
 		// SDE diff and changelog
 		r.Get("/diff", diffHandler.GetDiff)

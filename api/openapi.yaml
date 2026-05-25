@@ -9,7 +9,7 @@ info:
   version: 1.0.0
   contact:
     name: EVE SDE Server
-    url: https://github.com/yourusername/eve-sde-server
+    url: https://github.com/ilyaux/eve-sde-server
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -27,6 +27,8 @@ tags:
     description: EVE item operations
   - name: Search
     description: Full-text search
+  - name: Taxonomy
+    description: EVE inventory categories and groups
 
 paths:
   /health:
@@ -188,6 +190,161 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/categories:
+    get:
+      summary: List categories
+      description: Returns a paginated list of EVE inventory categories
+      tags:
+        - Taxonomy
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of categories to return
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          description: Number of categories to skip
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+
+  /api/v1/categories/{id}:
+    get:
+      summary: Get category by ID
+      description: Returns a single EVE inventory category
+      tags:
+        - Taxonomy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Category ID
+          schema:
+            type: integer
+            example: 4
+      responses:
+        '200':
+          description: Category found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/categories/{id}/groups:
+    get:
+      summary: List groups in a category
+      description: Returns a paginated list of groups for one category
+      tags:
+        - Taxonomy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Category ID
+          schema:
+            type: integer
+            example: 6
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Group list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupList'
+
+  /api/v1/groups:
+    get:
+      summary: List groups
+      description: Returns a paginated list of EVE inventory groups
+      tags:
+        - Taxonomy
+      parameters:
+        - name: category_id
+          in: query
+          description: Optional category filter
+          schema:
+            type: integer
+            example: 6
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Group list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupList'
+
+  /api/v1/groups/{id}:
+    get:
+      summary: Get group by ID
+      description: Returns a single EVE inventory group
+      tags:
+        - Taxonomy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: integer
+            example: 18
+      responses:
+        '200':
+          description: Group found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   schemas:
     Item:
@@ -208,7 +365,7 @@ components:
         volume:
           type: number
           format: float
-          description: Item volume in m³
+          description: Item volume in m3
           example: 0.01
         group_id:
           type: integer
@@ -221,6 +378,78 @@ components:
       required:
         - type_id
         - name
+
+    Category:
+      type: object
+      properties:
+        category_id:
+          type: integer
+          example: 4
+        name:
+          type: string
+          example: Material
+        published:
+          type: boolean
+          example: true
+      required:
+        - category_id
+        - name
+
+    Group:
+      type: object
+      properties:
+        group_id:
+          type: integer
+          example: 18
+        category_id:
+          type: integer
+          example: 4
+        name:
+          type: string
+          example: Mineral
+        published:
+          type: boolean
+          example: true
+      required:
+        - group_id
+        - category_id
+        - name
+
+    PageMeta:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 25000
+        limit:
+          type: integer
+          example: 50
+        offset:
+          type: integer
+          example: 0
+
+    CategoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+
+    GroupList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
 
     Error:
       type: object

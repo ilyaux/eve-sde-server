@@ -11,7 +11,7 @@ API that is easy to run locally, in Docker, or behind your own service.
 ## What It Does
 
 - Imports CCP's official SDE zip into SQLite.
-- Serves item lookup, list, and full-text search endpoints.
+- Serves item lookup, taxonomy, list, and full-text search endpoints.
 - Provides a GraphQL endpoint with GraphiQL enabled.
 - Includes API key authentication, admin key management, and rate limiting.
 - Proxies selected ESI endpoints with retry and in-memory caching.
@@ -95,6 +95,11 @@ Base URL: `http://localhost:8080/api/v1`
 GET /items?limit=50&offset=0
 GET /items/{type_id}
 GET /search?q=tritanium&limit=10&offset=0
+GET /categories?limit=50&offset=0
+GET /categories/{category_id}
+GET /categories/{category_id}/groups
+GET /groups?category_id=6&limit=50&offset=0
+GET /groups/{group_id}
 GET /diff?from=20250101&to=20250201
 GET /changelog
 ```
@@ -134,6 +139,12 @@ query {
     typeId
     name
     volume
+    groupId
+    categoryId
+  }
+  groups(categoryId: 6, limit: 5) {
+    groupId
+    name
   }
 }
 ```
@@ -170,6 +181,8 @@ client := evesde.NewClient("http://localhost:8080", "")
 item, err := client.GetItem(34)
 results, err := client.Search("tritanium", 10)
 list, err := client.ListItemsWithMeta(50, 0)
+categories, err := client.ListCategories(50, 0)
+groups, err := client.ListGroups(6, 50, 0)
 ```
 
 ## Development

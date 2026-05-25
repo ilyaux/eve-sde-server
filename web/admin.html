@@ -280,7 +280,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 EVE SDE Server - Admin Dashboard</h1>
+            <h1>EVE SDE Server - Admin Dashboard</h1>
             <p>Manage API keys, monitor usage, and configure server settings</p>
         </div>
 
@@ -297,11 +297,11 @@
                 <p>Active Keys</p>
             </div>
             <div class="stat-card">
-                <h3 id="total-items">25,818</h3>
+                <h3 id="total-items">0</h3>
                 <p>SDE Items</p>
             </div>
             <div class="stat-card">
-                <h3 id="server-status">●</h3>
+                <h3 id="server-status">OK</h3>
                 <p>Server Status</p>
             </div>
         </div>
@@ -335,13 +335,13 @@
             </form>
 
             <div id="new-key-display" class="hidden" style="margin-top: 20px;">
-                <h3>✅ API Key Created Successfully!</h3>
+                <h3>API Key Created Successfully</h3>
                 <div class="key-display">
                     <code id="new-key-value"></code>
                     <button class="copy-btn" onclick="copyKey()">Copy</button>
                 </div>
                 <p style="color: #e53e3e; margin-top: 10px;">
-                    ⚠️ Save this key now! You won't be able to see it again.
+                    Save this key now. You won't be able to see it again.
                 </p>
             </div>
         </div>
@@ -389,12 +389,13 @@
                     const stats = await response.json();
                     document.getElementById('total-keys').textContent = stats.total_keys || 0;
                     document.getElementById('active-keys').textContent = stats.active_keys || 0;
-                    document.getElementById('server-status').textContent = '●';
+                    document.getElementById('total-items').textContent = (stats.total_items || 0).toLocaleString();
+                    document.getElementById('server-status').textContent = 'OK';
                     document.getElementById('server-status').style.color = '#48bb78';
                 }
             } catch (error) {
                 console.error('Failed to load stats:', error);
-                document.getElementById('server-status').textContent = '●';
+                document.getElementById('server-status').textContent = 'DOWN';
                 document.getElementById('server-status').style.color = '#f56565';
             }
         }
