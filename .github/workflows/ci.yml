@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Vet server
+        run: go vet ./...
+
+      - name: Test server
+        run: go test ./...
+
+      - name: Race test server
+        env:
+          CGO_ENABLED: '1'
+        run: go test -race ./...
+
+      - name: Test Go SDK
+        working-directory: sdk/go
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Test Go SDK example
+        working-directory: sdk/go/examples/basic
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build server binary
+        run: go build -o /tmp/eve-sde-server ./cmd/server
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t eve-sde-server:ci .
