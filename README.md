@@ -1,7 +1,7 @@
 # EVE SDE Server
 
 [![CI](https://github.com/ilyaux/eve-sde-server/actions/workflows/ci.yml/badge.svg)](https://github.com/ilyaux/eve-sde-server/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/badge/go-1.24+-blue.svg)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/go-1.25+-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Self-hosted REST and GraphQL API for the EVE Online Static Data Export (SDE).
@@ -21,7 +21,7 @@ API that is easy to run locally, in Docker, or behind your own service.
 
 ## Requirements
 
-- Go 1.24 or newer.
+- Go 1.25 or newer.
 - Docker or Docker Compose if you want containerized deployment.
 - About 400 MB of network download for a full SDE import.
 

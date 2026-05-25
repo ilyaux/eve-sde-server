@@ -1,6 +1,6 @@
 module example
 
-go 1.24.0
+go 1.25.0
 
 replace github.com/ilyaux/eve-sde-server/sdk/go => ../..
 

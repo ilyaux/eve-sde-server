@@ -19,6 +19,8 @@ published; entries currently track unreleased work on `main`.
 
 ### Changed
 
+- Minimum supported Go version is now 1.25.
+- Upgraded `modernc.org/sqlite` to 1.50.1.
 - API keys are stored as SHA-256 hashes at rest. Raw keys are only returned when
   created.
 - Admin key management now uses the auth manager instead of direct database
