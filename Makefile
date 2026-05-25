@@ -24,7 +24,7 @@ test-coverage: ## Run tests with coverage
 	@echo "Coverage report: coverage.html"
 
 bench: ## Run benchmarks
-	@go test -bench=. -benchmem ./internal/repository
+	@go test -bench=. -benchmem ./...
 
 migrate: ## Run database migrations
 	@mkdir -p data
@@ -53,10 +53,10 @@ docker-run: ## Run Docker container
 	@docker run -p 8080:8080 -v $$(pwd)/data:/app/data eve-sde-server
 
 docker-compose-up: ## Start with docker-compose
-	@docker-compose up --build -d
+	@docker compose up --build -d
 
 docker-compose-down: ## Stop docker-compose
-	@docker-compose down
+	@docker compose down
 
 download-sde: ## Download SDE from CCP (requires curl/wget)
 	@mkdir -p data/sde

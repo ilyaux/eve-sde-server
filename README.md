@@ -207,6 +207,14 @@ make docker-compose-down
 The CI workflow runs vet, unit tests, race tests on Linux, SDK checks, server
 build, and Docker image build.
 
+## Contributing and Security
+
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for
+local setup, quality gates, and pull request expectations.
+
+Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md). Notable
+changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
 ## Project Layout
 
 ```text

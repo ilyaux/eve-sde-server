@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem in EVE SDE Server.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please do not include API keys,
+        credentials, or private production data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: The server returns ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest repro you can.
+      placeholder: |
+        1. Run ...
+        2. Request ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Runtime details help us reproduce the bug.
+      placeholder: |
+        OS:
+        Go version:
+        Docker/Compose version:
+        AUTH_ENABLED:
+        DB backend/path:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or response snippets
+      description: Paste relevant logs or HTTP responses. Redact secrets.
+      render: text

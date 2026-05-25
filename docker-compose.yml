@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # EVE SDE API Server
   eve-sde-server:
