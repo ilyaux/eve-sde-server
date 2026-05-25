@@ -19,6 +19,8 @@ published; entries currently track unreleased work on `main`.
 - Public `/ready` and `/version` operational endpoints.
 - Go SDK helpers for liveness, readiness, and server version metadata.
 - Go SDK helpers for SDE diff/changelog and cached ESI proxy endpoints.
+- Release workflow for GitHub releases, checksummed archives, and GHCR images.
+- Local release archive builder under `scripts/build-release-assets.sh`.
 
 ### Changed
 

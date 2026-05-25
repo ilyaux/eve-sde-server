@@ -67,6 +67,13 @@ Services from `docker-compose.yml`:
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (`admin/admin`)
 
+Tagged releases publish a GHCR image:
+
+```bash
+docker pull ghcr.io/ilyaux/eve-sde-server:v1.0.0
+docker run --rm -p 8080:8080 ghcr.io/ilyaux/eve-sde-server:v1.0.0
+```
+
 ## Configuration
 
 Environment variables:
@@ -233,6 +240,8 @@ local setup, quality gates, and pull request expectations.
 
 Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md). Notable
 changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
+Maintainer release notes are in [docs/releasing.md](docs/releasing.md).
 
 ## Project Layout
 

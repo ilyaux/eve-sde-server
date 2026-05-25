@@ -1,4 +1,4 @@
-.PHONY: help run build test migrate migrate-down clean docker docker-run download-sde
+.PHONY: help run build test migrate migrate-down clean docker docker-run download-sde release-assets
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
@@ -62,6 +62,10 @@ docker-compose-up: ## Start with docker-compose
 
 docker-compose-down: ## Stop docker-compose
 	@docker compose down
+
+release-assets: ## Build release archives into dist/
+	@bash scripts/build-release-assets.sh
+	@echo "Release artifacts written to dist/"
 
 download-sde: ## Download SDE from CCP (requires curl/wget)
 	@mkdir -p data/sde
