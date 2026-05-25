@@ -2,57 +2,44 @@ package main
 
 import (
 	"database/sql"
-	"log"
-	"os"
+	"testing"
 
 	_ "modernc.org/sqlite"
 )
 
-func main() {
-	if err := os.MkdirAll("data", 0755); err != nil {
-		log.Fatal(err)
-	}
-
-	db, err := sql.Open("sqlite", "./data/sde.db")
+func TestEnsureColumnAddsKeyHashBeforeIndex(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatalf("open sqlite: %v", err)
 	}
 	defer db.Close()
 
-	statements := []string{
-		`CREATE TABLE IF NOT EXISTS api_keys (
+	_, err = db.Exec(`
+		CREATE TABLE api_keys (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			key TEXT NOT NULL UNIQUE,
-			key_hash TEXT,
 			name TEXT NOT NULL,
 			rate_limit INTEGER NOT NULL DEFAULT 60,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			expires_at TIMESTAMP,
 			active BOOLEAN NOT NULL DEFAULT 1
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_api_keys_key ON api_keys(key)`,
-		`CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(active)`,
+		)
+	`)
+	if err != nil {
+		t.Fatalf("create old api_keys table: %v", err)
 	}
 
-	for _, statement := range statements {
-		if _, err := db.Exec(statement); err != nil {
-			log.Fatal(err)
-		}
-	}
 	if err := ensureColumn(db, "api_keys", "key_hash", "key_hash TEXT"); err != nil {
-		log.Fatal(err)
+		t.Fatalf("ensureColumn() error = %v", err)
 	}
 	if _, err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash) WHERE key_hash IS NOT NULL`); err != nil {
-		log.Fatal(err)
+		t.Fatalf("create key_hash index: %v", err)
 	}
 
-	log.Println("API keys table is ready")
-}
-
-func ensureColumn(db *sql.DB, table, column, definition string) error {
-	rows, err := db.Query("PRAGMA table_info(" + table + ")")
+	var found bool
+	rows, err := db.Query("PRAGMA table_info(api_keys)")
 	if err != nil {
-		return err
+		t.Fatalf("query table info: %v", err)
 	}
 	defer rows.Close()
 
@@ -63,16 +50,16 @@ func ensureColumn(db *sql.DB, table, column, definition string) error {
 		var defaultValue interface{}
 		var pk int
 		if err := rows.Scan(&cid, &name, &typ, &notNull, &defaultValue, &pk); err != nil {
-			return err
+			t.Fatalf("scan table info: %v", err)
 		}
-		if name == column {
-			return nil
+		if name == "key_hash" {
+			found = true
 		}
 	}
 	if err := rows.Err(); err != nil {
-		return err
+		t.Fatalf("iterate table info: %v", err)
 	}
-
-	_, err = db.Exec("ALTER TABLE " + table + " ADD COLUMN " + definition)
-	return err
+	if !found {
+		t.Fatal("key_hash column was not added")
+	}
 }

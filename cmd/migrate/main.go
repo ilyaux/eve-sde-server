@@ -58,6 +58,7 @@ func main() {
 		`CREATE TABLE IF NOT EXISTS api_keys (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			key TEXT NOT NULL UNIQUE,
+			key_hash TEXT,
 			name TEXT NOT NULL,
 			rate_limit INTEGER NOT NULL DEFAULT 60,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -113,6 +114,12 @@ func main() {
 			log.Fatalf("migration failed: %v\nSQL: %s", err, statement)
 		}
 	}
+	if err := ensureColumn(db, "api_keys", "key_hash", "key_hash TEXT"); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash) WHERE key_hash IS NOT NULL`); err != nil {
+		log.Fatal(err)
+	}
 
 	var count int
 	if err := db.QueryRow("SELECT COUNT(*) FROM items").Scan(&count); err != nil {
@@ -120,4 +127,32 @@ func main() {
 	}
 
 	log.Printf("Database is ready with %d sample items\n", count)
+}
+
+func ensureColumn(db *sql.DB, table, column, definition string) error {
+	rows, err := db.Query("PRAGMA table_info(" + table + ")")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notNull int
+		var defaultValue interface{}
+		var pk int
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		if name == column {
+			return nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	_, err = db.Exec("ALTER TABLE " + table + " ADD COLUMN " + definition)
+	return err
 }

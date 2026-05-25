@@ -2,8 +2,6 @@ package middleware
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"strings"
 
@@ -79,6 +77,5 @@ func GetAPIKey(ctx context.Context) (*auth.APIKey, bool) {
 
 // hashAPIKey creates a SHA256 hash of API key for safe logging
 func hashAPIKey(key string) string {
-	hash := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(hash[:])[:16] // First 16 chars of hash
+	return auth.HashAPIKey(key)[:16]
 }

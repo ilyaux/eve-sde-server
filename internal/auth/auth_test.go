@@ -86,6 +86,20 @@ func TestCreateAPIKey(t *testing.T) {
 	if apiKey.ExpiresAt != nil {
 		t.Error("expected no expiration")
 	}
+
+	var storedKey, storedHash string
+	if err := db.QueryRow("SELECT key, key_hash FROM api_keys WHERE id = ?", apiKey.ID).Scan(&storedKey, &storedHash); err != nil {
+		t.Fatalf("failed to query stored key: %v", err)
+	}
+	if storedKey == apiKey.Key {
+		t.Fatal("raw API key was stored in key column")
+	}
+	if storedHash != HashAPIKey(apiKey.Key) {
+		t.Fatalf("expected stored hash %s, got %s", HashAPIKey(apiKey.Key), storedHash)
+	}
+	if storedKey != keyReference(storedHash) {
+		t.Fatalf("expected stored key reference %s, got %s", keyReference(storedHash), storedKey)
+	}
 }
 
 func TestCreateAPIKey_WithExpiration(t *testing.T) {
@@ -137,6 +151,43 @@ func TestValidateAPIKey(t *testing.T) {
 
 	if validated.Name != created.Name {
 		t.Errorf("expected name %s, got %s", created.Name, validated.Name)
+	}
+}
+
+func TestValidateAPIKey_MigratesLegacyPlaintextKey(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	const legacyKey = "legacy_plaintext_key_for_migration_test"
+	_, err := db.Exec(`
+		INSERT INTO api_keys (key, name, rate_limit, active)
+		VALUES (?, 'legacy', 1000, 1)
+	`, legacyKey)
+	if err != nil {
+		t.Fatalf("failed to insert legacy key: %v", err)
+	}
+
+	manager := NewManager(db)
+	validated, err := manager.ValidateAPIKey(context.Background(), legacyKey)
+	if err != nil {
+		t.Fatalf("ValidateAPIKey() error = %v", err)
+	}
+	if validated.Name != "legacy" {
+		t.Fatalf("expected legacy key name, got %s", validated.Name)
+	}
+
+	var storedKey, storedHash string
+	if err := db.QueryRow("SELECT key, key_hash FROM api_keys WHERE name = 'legacy'").Scan(&storedKey, &storedHash); err != nil {
+		t.Fatalf("failed to query migrated key: %v", err)
+	}
+	if storedKey == legacyKey {
+		t.Fatal("legacy plaintext key was not removed from key column")
+	}
+	if storedHash != HashAPIKey(legacyKey) {
+		t.Fatalf("expected migrated hash %s, got %s", HashAPIKey(legacyKey), storedHash)
+	}
+	if storedKey != keyReference(storedHash) {
+		t.Fatalf("expected migrated key reference %s, got %s", keyReference(storedHash), storedKey)
 	}
 }
 

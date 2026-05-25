@@ -61,53 +61,38 @@ func (h *AdminHandler) Stats(w http.ResponseWriter, r *http.Request) {
 
 // ListKeys returns all API keys (without the actual key values)
 func (h *AdminHandler) ListKeys(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(`
-		SELECT id, key, name, rate_limit, created_at, expires_at, active
-		FROM api_keys
-		ORDER BY created_at DESC
-	`)
+	keys, err := h.authMgr.ListAPIKeys(r.Context())
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to query API keys")
 		http.Error(w, `{"error":"failed to fetch keys"}`, http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	var keys []map[string]interface{}
-	for rows.Next() {
-		var id, rateLimit int
-		var key, name string
-		var createdAt string
-		var expiresAt sql.NullString
-		var active bool
-
-		err := rows.Scan(&id, &key, &name, &rateLimit, &createdAt, &expiresAt, &active)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to scan key row")
-			continue
-		}
+	response := make([]map[string]interface{}, 0, len(keys))
+	for _, key := range keys {
+		keyPreview := maskAPIKey(key.Key)
 
 		keyData := map[string]interface{}{
-			"id":          id,
-			"key":         maskAPIKey(key),
-			"key_preview": maskAPIKey(key),
-			"name":        name,
-			"rate_limit":  rateLimit,
-			"created_at":  createdAt,
-			"active":      active,
+			"id":          key.ID,
+			"key":         keyPreview,
+			"key_preview": keyPreview,
+			"name":        key.Name,
+			"rate_limit":  key.RateLimit,
+			"created_at":  key.CreatedAt.Format(time.RFC3339),
+			"active":      key.Active,
 		}
 
-		if expiresAt.Valid {
-			keyData["expires_at"] = expiresAt.String
+		if key.ExpiresAt != nil {
+			keyData["expires_at"] = key.ExpiresAt.Format(time.RFC3339)
 		} else {
 			keyData["expires_at"] = nil
 		}
 
-		keys = append(keys, keyData)
+		response = append(response, keyData)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(keys)
+	json.NewEncoder(w).Encode(response)
 }
 
 // CreateKey creates a new API key
@@ -132,27 +117,19 @@ func (h *AdminHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 		req.RateLimit = 60 // Default 60 req/min
 	}
 
-	// Generate new API key
-	key, err := auth.GenerateAPIKey()
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to generate API key")
-		http.Error(w, `{"error":"failed to generate key"}`, http.StatusInternalServerError)
-		return
-	}
-
-	// Insert into database
-	var expiresAt interface{}
+	var expiresIn *time.Duration
 	if req.ExpiresAt != nil {
-		expiresAt = req.ExpiresAt.Format(time.RFC3339)
+		duration := time.Until(*req.ExpiresAt)
+		if duration <= 0 {
+			http.Error(w, `{"error":"expires_at must be in the future"}`, http.StatusBadRequest)
+			return
+		}
+		expiresIn = &duration
 	}
 
-	_, err = h.db.Exec(`
-		INSERT INTO api_keys (key, name, rate_limit, expires_at, active)
-		VALUES (?, ?, ?, ?, 1)
-	`, key, req.Name, req.RateLimit, expiresAt)
-
+	apiKey, err := h.authMgr.CreateAPIKey(r.Context(), req.Name, req.RateLimit, expiresIn)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to insert API key")
+		log.Error().Err(err).Msg("Failed to create API key")
 		http.Error(w, `{"error":"failed to save key"}`, http.StatusInternalServerError)
 		return
 	}
@@ -163,7 +140,7 @@ func (h *AdminHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 		Msg("API key created")
 
 	response := map[string]interface{}{
-		"key":        key,
+		"key":        apiKey.Key,
 		"name":       req.Name,
 		"rate_limit": req.RateLimit,
 		"created_at": time.Now().Format(time.RFC3339),
@@ -207,5 +184,5 @@ func maskAPIKey(key string) string {
 		return "********"
 	}
 
-	return key[:8] + "..." + key[len(key)-4:]
+	return auth.KeyPreview(key)
 }

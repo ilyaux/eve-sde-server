@@ -414,7 +414,7 @@
 
                 keys.forEach(key => {
                     const row = document.createElement('tr');
-                    const preview = key.key.substring(0, 16) + '...';
+                    const preview = key.key_preview || key.key || '';
                     const created = new Date(key.created_at).toLocaleDateString();
                     const expires = key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'Never';
                     const status = key.active ?

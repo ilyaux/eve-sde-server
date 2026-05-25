@@ -14,6 +14,7 @@ API that is easy to run locally, in Docker, or behind your own service.
 - Serves item lookup, taxonomy, list, and full-text search endpoints.
 - Provides a GraphQL endpoint with GraphiQL enabled.
 - Includes API key authentication, admin key management, and rate limiting.
+- Stores API keys as SHA-256 hashes at rest; the raw key is only returned once.
 - Proxies selected ESI endpoints with retry and in-memory caching.
 - Ships with Prometheus metrics and Grafana provisioning.
 - Includes a Go SDK under `sdk/go`.
