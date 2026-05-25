@@ -23,8 +23,9 @@ func Auth(authManager *auth.Manager, public map[string]bool) func(http.Handler) 
 				return
 			}
 
-			// Skip auth for /api/esi/* (ESI proxy)
-			if strings.HasPrefix(r.URL.Path, "/api/esi/") {
+			// Skip auth for read-only ESI proxy requests. Mutating ESI proxy
+			// management endpoints still require API-key auth when enabled.
+			if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/esi/") {
 				next.ServeHTTP(w, r)
 				return
 			}

@@ -170,6 +170,9 @@ POST   /api/admin/sde/update
 GET    /api/admin/sde/status
 ```
 
+The read-only ESI proxy is public. `POST /api/esi/cache/clear` is a mutating
+maintenance endpoint and requires an API key when `AUTH_ENABLED=true`.
+
 ## Go SDK
 
 ```bash

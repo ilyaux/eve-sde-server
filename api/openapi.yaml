@@ -29,6 +29,12 @@ tags:
     description: Full-text search
   - name: Taxonomy
     description: EVE inventory categories and groups
+  - name: SDE Versions
+    description: SDE version history and diff endpoints
+  - name: ESI Proxy
+    description: Cached proxy endpoints for selected ESI data
+  - name: Admin
+    description: Admin-only key and update management
 
 paths:
   /health:
@@ -345,7 +351,374 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/diff:
+    get:
+      summary: Compare two SDE versions
+      description: Returns a diff placeholder until historical SDE snapshots are available
+      tags:
+        - SDE Versions
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Source SDE version identifier
+          schema:
+            type: string
+            example: "20250101"
+        - name: to
+          in: query
+          required: true
+          description: Target SDE version identifier
+          schema:
+            type: string
+            example: "20250201"
+      responses:
+        '200':
+          description: Diff response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffResponse'
+        '400':
+          description: Missing from or to parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/changelog:
+    get:
+      summary: List recent SDE imports
+      description: Returns recent SDE import history, or the current item count when no import history exists
+      tags:
+        - SDE Versions
+      responses:
+        '200':
+          description: Changelog response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangelogResponse'
+
+  /api/esi/types/{id}:
+    get:
+      summary: Get ESI type information
+      description: Fetches type information from ESI with server-side caching
+      tags:
+        - ESI Proxy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: EVE type ID
+          schema:
+            type: integer
+            example: 34
+      responses:
+        '200':
+          description: ESI type information
+          headers:
+            X-Cache:
+              description: Whether the response was served from cache
+              schema:
+                type: string
+                enum:
+                  - HIT
+                  - MISS
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Invalid type ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: ESI request failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/esi/markets/prices:
+    get:
+      summary: Get ESI market prices
+      description: Fetches current market prices from ESI with server-side caching
+      tags:
+        - ESI Proxy
+      responses:
+        '200':
+          description: ESI market prices
+          headers:
+            X-Cache:
+              description: Whether the response was served from cache
+              schema:
+                type: string
+                enum:
+                  - HIT
+                  - MISS
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '502':
+          description: ESI request failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/esi/markets/{regionID}/history/{typeID}:
+    get:
+      summary: Get ESI market history
+      description: Fetches market history for a region and type from ESI with server-side caching
+      tags:
+        - ESI Proxy
+      parameters:
+        - name: regionID
+          in: path
+          required: true
+          description: EVE region ID
+          schema:
+            type: integer
+            example: 10000002
+        - name: typeID
+          in: path
+          required: true
+          description: EVE type ID
+          schema:
+            type: integer
+            example: 34
+      responses:
+        '200':
+          description: ESI market history
+          headers:
+            X-Cache:
+              description: Whether the response was served from cache
+              schema:
+                type: string
+                enum:
+                  - HIT
+                  - MISS
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '400':
+          description: Invalid region or type ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: ESI request failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/esi/cache/clear:
+    post:
+      summary: Clear ESI proxy cache
+      description: Clears the in-memory ESI proxy cache. Requires API-key auth when AUTH_ENABLED=true.
+      tags:
+        - ESI Proxy
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Cache cleared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ESICacheClearResponse'
+        '401':
+          description: Missing or invalid API key when authentication is enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/stats:
+    get:
+      summary: Get admin statistics
+      tags:
+        - Admin
+      security:
+        - AdminBasicAuth: []
+      responses:
+        '200':
+          description: Server statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStats'
+        '401':
+          description: Missing or invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/keys:
+    get:
+      summary: List API keys
+      description: Lists key metadata and masked previews. Raw API keys are never returned here.
+      tags:
+        - Admin
+      security:
+        - AdminBasicAuth: []
+      responses:
+        '200':
+          description: API key metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminAPIKey'
+        '401':
+          description: Missing or invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create API key
+      description: Creates an API key and returns the raw key once
+      tags:
+        - Admin
+      security:
+        - AdminBasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAPIKeyRequest'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAPIKeyResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing or invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/keys/{id}:
+    delete:
+      summary: Revoke API key
+      tags:
+        - Admin
+      security:
+        - AdminBasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: API key database ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: API key revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeAPIKeyResponse'
+        '400':
+          description: Invalid key ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing or invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/sde/update:
+    post:
+      summary: Trigger SDE update
+      tags:
+        - Admin
+      security:
+        - AdminBasicAuth: []
+      responses:
+        '200':
+          description: Update started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerUpdateResponse'
+        '401':
+          description: Missing or invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/sde/status:
+    get:
+      summary: Get SDE scheduler status
+      tags:
+        - Admin
+      security:
+        - AdminBasicAuth: []
+      responses:
+        '200':
+          description: Scheduler status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulerStatus'
+        '401':
+          description: Missing or invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+      description: API key generated from the admin API. Required for protected API routes when AUTH_ENABLED=true.
+    AdminBasicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic Auth credentials from ADMIN_USERNAME and ADMIN_PASSWORD.
+
   schemas:
     Item:
       type: object
@@ -450,6 +823,216 @@ components:
             $ref: '#/components/schemas/Group'
         meta:
           $ref: '#/components/schemas/PageMeta'
+
+    ItemChange:
+      type: object
+      properties:
+        type_id:
+          type: integer
+          example: 34
+        name:
+          type: string
+          example: Tritanium
+        change_type:
+          type: string
+          enum:
+            - added
+            - removed
+            - modified
+          example: modified
+        old_value:
+          type: string
+          example: "0.01"
+        new_value:
+          type: string
+          example: "0.02"
+        field_changed:
+          type: string
+          example: volume
+
+    DiffSummary:
+      type: object
+      properties:
+        added:
+          type: integer
+          example: 0
+        removed:
+          type: integer
+          example: 0
+        modified:
+          type: integer
+          example: 0
+
+    DiffResponse:
+      type: object
+      properties:
+        from_version:
+          type: string
+          example: "20250101"
+        to_version:
+          type: string
+          example: "20250201"
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemChange'
+        summary:
+          $ref: '#/components/schemas/DiffSummary'
+        note:
+          type: string
+
+    SDEVersion:
+      type: object
+      properties:
+        version:
+          type: string
+          example: current
+        imported_at:
+          type: string
+          example: unknown
+        item_count:
+          type: integer
+          example: 25000
+
+    ChangelogResponse:
+      type: object
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SDEVersion'
+        count:
+          type: integer
+          example: 1
+        note:
+          type: string
+
+    AdminStats:
+      type: object
+      properties:
+        total_keys:
+          type: integer
+          example: 3
+        active_keys:
+          type: integer
+          example: 2
+        total_items:
+          type: integer
+          example: 25000
+        status:
+          type: string
+          example: healthy
+        timestamp:
+          type: integer
+          format: int64
+          example: 1760000000
+
+    AdminAPIKey:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        key:
+          type: string
+          description: Masked key preview, not the raw key
+          example: sha256_a...1234
+        key_preview:
+          type: string
+          description: Masked key preview, not the raw key
+          example: sha256_a...1234
+        name:
+          type: string
+          example: production-app
+        rate_limit:
+          type: integer
+          example: 60
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        active:
+          type: boolean
+          example: true
+
+    CreateAPIKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: production-app
+        rate_limit:
+          type: integer
+          default: 60
+          example: 120
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - name
+
+    CreateAPIKeyResponse:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Raw API key. Store it immediately; it is only returned once.
+          example: esk_0123456789abcdef
+        name:
+          type: string
+          example: production-app
+        rate_limit:
+          type: integer
+          example: 120
+        created_at:
+          type: string
+          format: date-time
+
+    RevokeAPIKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: key revoked
+
+    TriggerUpdateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: started
+        message:
+          type: string
+          example: SDE update has been triggered in the background
+
+    SchedulerStatus:
+      type: object
+      properties:
+        last_check:
+          type: string
+          format: date-time
+          nullable: true
+        message:
+          type: string
+          example: No updates have been performed yet
+
+    ESICacheClearResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        cleared:
+          type: integer
+          example: 4
 
     Error:
       type: object

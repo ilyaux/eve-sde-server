@@ -197,8 +197,8 @@ func main() {
 		r.Get("/markets/prices", esiHandler.GetMarketPrices)
 		r.Get("/markets/{regionID}/history/{typeID}", esiHandler.GetMarketHistory)
 
-		// Generic proxy for any ESI endpoint
-		r.HandleFunc("/*", esiHandler.Proxy)
+		// Generic read-only proxy for any ESI endpoint
+		r.Get("/*", esiHandler.Proxy)
 
 		// Cache management
 		r.Post("/cache/clear", esiHandler.ClearCache)
