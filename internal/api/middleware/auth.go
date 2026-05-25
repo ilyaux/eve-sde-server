@@ -29,8 +29,8 @@ func Auth(authManager *auth.Manager, public map[string]bool) func(http.Handler) 
 				return
 			}
 
-			// Skip auth for /api/admin/* (protected by AdminAuth middleware instead)
-			if strings.HasPrefix(r.URL.Path, "/api/admin/") {
+			// Skip auth for admin routes (protected by AdminAuth middleware instead)
+			if r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/api/admin/") {
 				next.ServeHTTP(w, r)
 				return
 			}

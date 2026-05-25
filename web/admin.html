@@ -412,29 +412,50 @@
                 const tbody = document.getElementById('keys-tbody');
                 tbody.innerHTML = '';
 
-                keys.forEach(key => {
+                keys.forEach(apiKey => {
                     const row = document.createElement('tr');
-                    const preview = key.key_preview || key.key || '';
-                    const created = new Date(key.created_at).toLocaleDateString();
-                    const expires = key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'Never';
-                    const status = key.active ?
-                        '<span class="badge badge-success">Active</span>' :
-                        '<span class="badge badge-danger">Revoked</span>';
+                    const preview = apiKey.key_preview || apiKey.key || '';
+                    const created = new Date(apiKey.created_at).toLocaleDateString();
+                    const expires = apiKey.expires_at ? new Date(apiKey.expires_at).toLocaleDateString() : 'Never';
 
-                    row.innerHTML = `
-                        <td><strong>${key.name}</strong></td>
-                        <td><code>${preview}</code></td>
-                        <td>${key.rate_limit}/min</td>
-                        <td>${created}</td>
-                        <td>${expires}</td>
-                        <td>${status}</td>
-                        <td class="actions">
-                            ${key.active ?
-                                `<button class="btn btn-danger btn-sm" onclick="revokeKey(${key.id}, '${key.name}')">Revoke</button>` :
-                                `<button class="btn btn-secondary btn-sm" disabled>Revoked</button>`
-                            }
-                        </td>
-                    `;
+                    const nameCell = document.createElement('td');
+                    const nameStrong = document.createElement('strong');
+                    nameStrong.textContent = apiKey.name;
+                    nameCell.appendChild(nameStrong);
+
+                    const previewCell = document.createElement('td');
+                    const previewCode = document.createElement('code');
+                    previewCode.textContent = preview;
+                    previewCell.appendChild(previewCode);
+
+                    const rateLimitCell = document.createElement('td');
+                    rateLimitCell.textContent = `${apiKey.rate_limit}/min`;
+
+                    const createdCell = document.createElement('td');
+                    createdCell.textContent = created;
+
+                    const expiresCell = document.createElement('td');
+                    expiresCell.textContent = expires;
+
+                    const statusCell = document.createElement('td');
+                    const statusBadge = document.createElement('span');
+                    statusBadge.className = apiKey.active ? 'badge badge-success' : 'badge badge-danger';
+                    statusBadge.textContent = apiKey.active ? 'Active' : 'Revoked';
+                    statusCell.appendChild(statusBadge);
+
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'actions';
+                    const actionButton = document.createElement('button');
+                    actionButton.className = apiKey.active ? 'btn btn-danger btn-sm' : 'btn btn-secondary btn-sm';
+                    actionButton.textContent = apiKey.active ? 'Revoke' : 'Revoked';
+                    if (apiKey.active) {
+                        actionButton.addEventListener('click', () => revokeKey(apiKey.id, apiKey.name));
+                    } else {
+                        actionButton.disabled = true;
+                    }
+                    actionsCell.appendChild(actionButton);
+
+                    row.append(nameCell, previewCell, rateLimitCell, createdCell, expiresCell, statusCell, actionsCell);
                     tbody.appendChild(row);
                 });
             } catch (error) {
