@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/caarlos0/env/v10 v10.0.0
-	github.com/go-chi/chi/v5 v5.3.0
+	github.com/go-chi/chi/v5 v5.3.1
 	github.com/go-chi/cors v1.2.2
 	github.com/graphql-go/graphql v0.8.1
 	github.com/graphql-go/handler v0.2.4
