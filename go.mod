@@ -13,7 +13,7 @@ require (
 	github.com/redis/go-redis/v9 v9.19.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.35.1
-	github.com/sethvargo/go-retry v0.3.0
+	github.com/sethvargo/go-retry v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.50.1
 )
